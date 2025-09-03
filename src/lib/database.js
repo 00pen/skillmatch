@@ -91,17 +91,28 @@ class MockAuth {
       created_at: new Date().toISOString()
     };
 
-    // Create user profile
+    // Create user profile with proper name handling
     const newProfile = {
       id: `profile_${Date.now()}`,
       user_id: newUser.id,
-      full_name: userData.fullName || '',
+      full_name: userData.fullName || userData.firstName + ' ' + (userData.lastName || '') || email.split('@')[0],
       role: userData.role || 'job-seeker',
       location: userData.location || '',
       current_job_title: userData.currentJobTitle || '',
       company_name: userData.companyName || '',
       industry: userData.industry || '',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      // Initialize all required profile fields
+      skills: [],
+      languages: [],
+      certifications: [],
+      education: [],
+      work_experience: [],
+      availability: 'available',
+      notice_period: '2-weeks',
+      salary_expectations_min: null,
+      salary_expectations_max: null,
+      salary_expectations_currency: 'USD'
     };
 
     // Save to localStorage

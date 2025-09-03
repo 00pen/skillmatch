@@ -19,8 +19,16 @@ const JobDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
-  const jobId = id || '1';
+  const jobId = id;
   
+  // Redirect if no job ID is provided
+  useEffect(() => {
+    if (!jobId) {
+      navigate('/job-search-results');
+      return;
+    }
+  }, [jobId, navigate]);
+
   // Use custom hooks
   const { job, isLoading, error } = useJob(jobId);
   const { jobs: allJobs } = useJobs();
