@@ -192,7 +192,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                     </div>
                     <div>
                       <div className="font-medium text-text-primary">
-                        {user?.name || 'User'}
+                        {userProfile?.full_name || user?.email || 'User'}
                       </div>
                       <div className="text-sm text-text-secondary capitalize">
                         {userRole?.replace('-', ' ')}
