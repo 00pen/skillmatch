@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useSavedJobs } from '../../../hooks/useSavedJobs';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import Button from '../../../components/ui/Button';
+import QuickApplyModal from '../../../components/modals/QuickApplyModal';
 
 const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { savedJobIds, toggleSaveJob } = useSavedJobs();
+  const [selectedJobForQuickApply, setSelectedJobForQuickApply] = useState(null);
 
   const handleJobClick = (jobId) => {
     navigate(`/job-details?id=${jobId}`);
@@ -13,14 +19,47 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
 
   const handleQuickApply = (e, jobId) => {
     e?.stopPropagation();
-    // In a real app, this would trigger a quick apply modal or process
+    
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
     console.log('Quick apply to job:', jobId);
+    
+    // Find the job details for the modal
+    const job = recommendedJobs.find(j => j.id === jobId);
+    if (job) {
+      // Transform the job data to match expected format
+      const transformedJob = {
+        id: job.id,
+        title: job.title,
+        company: { name: job.company, logo: job.companyLogo },
+        location: job.location,
+        salaryRange: { min: job.salaryMin, max: job.salaryMax },
+        type: job.type,
+        description: job.description,
+        skills: job.skills
+      };
+      setSelectedJobForQuickApply(transformedJob);
+    }
   };
 
-  const handleSaveJob = (e, jobId) => {
+  const handleSaveJob = async (e, jobId) => {
     e?.stopPropagation();
-    // In a real app, this would save the job to user's saved jobs
+    
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
     console.log('Save job:', jobId);
+    
+    try {
+      await toggleSaveJob(jobId);
+    } catch (err) {
+      console.error('Error toggling saved job:', err);
+    }
   };
 
   const formatSalary = (min, max) => {
@@ -100,7 +139,11 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
                         onClick={(e) => handleSaveJob(e, job?.id)}
                         className="p-2 hover:bg-muted rounded-lg transition-colors duration-150"
                       >
-                        <Icon name="Bookmark" size={16} className="text-text-secondary hover:text-secondary" />
+                        <Icon 
+                          name={savedJobIds?.has(job?.id) ? "BookmarkCheck" : "Bookmark"} 
+                          size={16} 
+                          className={savedJobIds?.has(job?.id) ? "text-secondary" : "text-text-secondary hover:text-secondary"} 
+                        />
                       </button>
                     </div>
                     
@@ -194,6 +237,13 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
           </Button>
         </div>
       )}
+      
+      {/* Quick Apply Modal */}
+      <QuickApplyModal
+        isOpen={!!selectedJobForQuickApply}
+        onClose={() => setSelectedJobForQuickApply(null)}
+        job={selectedJobForQuickApply}
+      />
     </div>
   );
 };

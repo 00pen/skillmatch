@@ -14,6 +14,7 @@ import JobListSkeleton from './components/JobListSkeleton';
 import NoResults from './components/NoResults';
 import Pagination from './components/Pagination';
 import Button from '../../components/ui/Button';
+import QuickApplyModal from '../../components/modals/QuickApplyModal';
 
 const JobSearchResults = () => {
   const location = useLocation();
@@ -36,6 +37,7 @@ const JobSearchResults = () => {
   const [sortBy, setSortBy] = useState('relevance');
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [selectedJobForQuickApply, setSelectedJobForQuickApply] = useState(null);
   
   const resultsPerPage = 20;
   
@@ -188,24 +190,12 @@ const JobSearchResults = () => {
       return;
     }
 
-    try {
-      // Create a quick application with minimal data
-      const { error } = await createApplication({
-        job_id: jobId,
-        cover_letter: 'Quick application - I am interested in this position and would like to be considered. I will provide more details if selected for an interview.',
-        notes: 'Applied via Quick Apply'
-      });
-      
-      if (error) {
-        console.error('Quick application failed:', error);
-        alert('Failed to submit application. Please try the detailed application instead.');
-        return;
-      }
-      
-      alert('Application submitted successfully! You can track its progress in your Applications page.');
-    } catch (error) {
-      console.error('Quick application failed:', error);
-      alert('Failed to submit application. Please try again.');
+    console.log('Quick apply to job:', jobId);
+    
+    // Find the job details for the modal
+    const job = jobs.find(j => j.id === jobId);
+    if (job) {
+      setSelectedJobForQuickApply(job);
     }
   };
 
@@ -314,6 +304,13 @@ const JobSearchResults = () => {
           </div>
         </div>
       </div>
+      
+      {/* Quick Apply Modal */}
+      <QuickApplyModal
+        isOpen={!!selectedJobForQuickApply}
+        onClose={() => setSelectedJobForQuickApply(null)}
+        job={selectedJobForQuickApply}
+      />
     </div>
   );
 };
