@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { getErrorMessage } from '../../utils/errorHandler';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Icon from '../../components/AppIcon';
 
 const Login = () => {
@@ -55,7 +57,7 @@ const Login = () => {
       const { data, error } = await signIn(formData.email, formData.password);
       
       if (error) {
-        setErrors({ submit: error.message });
+        setErrors({ submit: getErrorMessage(error) });
         return;
       }
       
@@ -72,8 +74,10 @@ const Login = () => {
       }
       
     } catch (error) {
-      console.error('Login error:', error);
-      setErrors({ submit: 'Login failed. Please try again.' });
+      if (import.meta.env.DEV) {
+        console.error('Login error:', error);
+      }
+      setErrors({ submit: getErrorMessage(error) });
     } finally {
       setIsLoading(false);
     }
@@ -156,7 +160,11 @@ const Login = () => {
                   variant="outline"
                   size="default"
                   fullWidth
-                  onClick={() => console.log('Google login')}
+                  onClick={() => {
+                    if (import.meta.env.DEV) {
+                      console.log('Google login not implemented');
+                    }
+                  }}
                   className="bg-white border-border text-text-primary hover:bg-muted transition-colors duration-150"
                   iconName="Chrome"
                   iconPosition="left"
@@ -169,7 +177,11 @@ const Login = () => {
                   variant="outline"
                   size="default"
                   fullWidth
-                  onClick={() => console.log('LinkedIn login')}
+                  onClick={() => {
+                    if (import.meta.env.DEV) {
+                      console.log('LinkedIn login not implemented');
+                    }
+                  }}
                   className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-150"
                   iconName="Linkedin"
                   iconPosition="left"
