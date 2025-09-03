@@ -96,7 +96,7 @@ const JobSeekerDashboard = () => {
                   {getGreeting()}, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'there'}! 👋
                 </h1>
                 <p className="text-text-secondary mt-1">
-                  {calculateProfileCompletion() < 80 
+                  {(!userProfile?.full_name || !userProfile?.location || !userProfile?.phone) 
                     ? "Complete your profile to get better job matches" 
                     : "Here are the latest opportunities for you"
                   }
