@@ -3,6 +3,7 @@ import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ui/ProtectedRoute";
 import NotFound from "pages/NotFound";
 import Landing from './pages/Landing';
 import JobSeekerDashboard from './pages/job-seeker-dashboard';
@@ -21,16 +22,43 @@ const Routes = () => {
         <ErrorBoundary>
           <ScrollToTop />
           <RouterRoutes>
-            {/* Define your route here */}
+            {/* Public routes */}
             <Route path="/" element={<Landing />} />
-            <Route path="/job-seeker-dashboard" element={<JobSeekerDashboard />} />
-            <Route path="/job-details" element={<JobDetails />} />
-            <Route path="/employer-dashboard" element={<EmployerDashboard />} />
-            <Route path="/job-search-results" element={<JobSearchResults />} />
-            <Route path="/application-tracking" element={<ApplicationTracking />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/profile" element={<Profile />} />
+            
+            {/* Protected routes */}
+            <Route path="/job-seeker-dashboard" element={
+              <ProtectedRoute requiredRole="job-seeker">
+                <JobSeekerDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/employer-dashboard" element={
+              <ProtectedRoute requiredRole="employer">
+                <EmployerDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/job-details" element={
+              <ProtectedRoute>
+                <JobDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/job-search-results" element={
+              <ProtectedRoute>
+                <JobSearchResults />
+              </ProtectedRoute>
+            } />
+            <Route path="/application-tracking" element={
+              <ProtectedRoute>
+                <ApplicationTracking />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            
             <Route path="*" element={<NotFound />} />
           </RouterRoutes>
         </ErrorBoundary>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useJobs } from '../../hooks/useJobs';
 import { useSavedJobs } from '../../hooks/useSavedJobs';
 import { useApplications } from '../../hooks/useApplications';
@@ -268,10 +269,11 @@ const JobSearchResults = () => {
               {isLoading || error ? (
                 error ? (
                   <div className="text-center py-12">
-                    <Icon name="AlertCircle" size={48} className="mx-auto text-error mb-4" />
+                    <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
                     <h3 className="text-lg font-medium text-text-primary mb-2">Error Loading Jobs</h3>
                     <p className="text-text-secondary mb-4">{error}</p>
-                    <Button variant="default" onClick={refetch} iconName="RefreshCw">
+                    <Button variant="default" onClick={refetch} className="inline-flex items-center gap-2">
+                      <RefreshCw size={16} />
                       Try Again
                     </Button>
                   </div>

@@ -142,7 +142,11 @@ const RegistrationForm = ({ selectedRole, onSubmit, className = '' }) => {
       // Call parent onSubmit for any additional handling
       onSubmit({ ...userData, id: data.user?.id });
       
-      // Navigation will be handled by auth state change
+      // Navigate to appropriate dashboard based on role
+      const dashboardRoute = selectedRole === 'employer' ? '/employer-dashboard' : '/job-seeker-dashboard';
+      setTimeout(() => {
+        navigate(dashboardRoute);
+      }, 2000); // Small delay to show success message
     } catch (error) {
       setErrors({ submit: 'Registration failed. Please try again.' });
     } finally {
