@@ -109,9 +109,20 @@ export const db = {
       return await mockAuth.updateUserProfile(userId, updates);
     }
     
+    // Filter out fields that might not exist in the database yet
+    const allowedFields = [
+      'full_name', 'role', 'location', 'current_job_title', 'company_name', 
+      'industry', 'bio', 'website_url', 'linkedin_url', 'github_url', 
+      'portfolio_url', 'phone', 'profile_completion_percentage'
+    ];
+    
+    const filteredUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([key]) => allowedFields.includes(key))
+    );
+    
     const { data, error } = await supabase
       .from('user_profiles')
-      .update(updates)
+      .update(filteredUpdates)
       .eq('user_id', userId)
       .select()
       .single();
