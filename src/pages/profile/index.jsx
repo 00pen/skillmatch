@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
@@ -8,6 +9,7 @@ import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
 
 const Profile = () => {
+  const navigate = useNavigate();
   const { user, userProfile, updateProfile } = useAuth();
   const [formData, setFormData] = useState({
     full_name: '',
