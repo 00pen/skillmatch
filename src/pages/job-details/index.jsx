@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useJob } from '../../hooks/useJobs';
+import { useJobs, useJob } from '../../hooks/useJobs';
 import { useSavedJobs } from '../../hooks/useSavedJobs';
 import { useApplications } from '../../hooks/useApplications';
 import { useAuth } from '../../contexts/AuthContext';

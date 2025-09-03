@@ -7,7 +7,7 @@ import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
 import FileUpload from '../../components/ui/FileUpload';
-import Checkbox from '../../components/ui/Checkbox';
+import { Checkbox } from '../../components/ui/Checkbox';
 import Icon from '../../components/AppIcon';
 
 const Profile = () => {
