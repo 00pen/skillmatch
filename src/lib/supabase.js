@@ -100,7 +100,7 @@ export const db = {
       .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     return { data, error };
   },
 
@@ -308,7 +308,7 @@ export const db = {
         )
       `)
       .eq('id', jobId)
-      .single();
+      .maybeSingle();
     return { data, error };
   },
 
@@ -513,7 +513,7 @@ export const db = {
       .select('id')
       .eq('user_id', userId)
       .eq('job_id', jobId)
-      .single();
+      .maybeSingle();
     return { data: !!data, error };
   },
 
