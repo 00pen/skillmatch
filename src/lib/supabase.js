@@ -1,17 +1,30 @@
 import { createClient } from '@supabase/supabase-js';
+import { mockAuth } from './database.js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+// Use mock auth for development if Supabase credentials are missing or invalid
+const USE_MOCK_AUTH = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-project');
+
+let supabase = null;
+if (!USE_MOCK_AUTH) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+  } catch (error) {
+    console.warn('Failed to create Supabase client, falling back to mock auth:', error);
+  }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
 
-// Auth helpers
+// Auth helpers - with fallback to mock auth for development
 export const auth = {
   signUp: async (email, password, userData = {}) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return await mockAuth.signUp(email, password, userData);
+    }
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -23,6 +36,10 @@ export const auth = {
   },
 
   signIn: async (email, password) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return await mockAuth.signIn(email, password);
+    }
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -31,24 +48,40 @@ export const auth = {
   },
 
   signOut: async () => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return await mockAuth.signOut();
+    }
+    
     const { error } = await supabase.auth.signOut();
     return { error };
   },
 
   getCurrentUser: async () => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return await mockAuth.getCurrentUser();
+    }
+    
     const { data: { user }, error } = await supabase.auth.getUser();
     return { user, error };
   },
 
   onAuthStateChange: (callback) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return mockAuth.onAuthStateChange(callback);
+    }
+    
     return supabase.auth.onAuthStateChange(callback);
   }
 };
 
-// Database helpers
+// Database helpers - with fallback to mock for development
 export const db = {
   // Users
   createUserProfile: async (userId, profileData) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return await mockAuth.createUserProfile(userId, profileData);
+    }
+    
     const { data, error } = await supabase
       .from('user_profiles')
       .insert([{ user_id: userId, ...profileData }])
@@ -58,6 +91,10 @@ export const db = {
   },
 
   getUserProfile: async (userId) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return await mockAuth.getUserProfile(userId);
+    }
+    
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
@@ -67,6 +104,10 @@ export const db = {
   },
 
   updateUserProfile: async (userId, updates) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return await mockAuth.updateUserProfile(userId, updates);
+    }
+    
     const { data, error } = await supabase
       .from('user_profiles')
       .update(updates)
@@ -77,6 +118,10 @@ export const db = {
   },
 
   deleteUserAccount: async (userId) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return await mockAuth.deleteUserAccount(userId);
+    }
+    
     // This will cascade and delete related records
     const { error } = await supabase
       .from('user_profiles')
