@@ -59,7 +59,10 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "vite build --sourcemap",
+    "build": "vite build",
+    "build:vercel": "vite build",
+    "build:netlify": "vite build",
+    "preview": "vite preview",
     "serve": "vite preview"
   },
   "eslintConfig": {
