@@ -53,7 +53,11 @@ export const useSavedJobs = () => {
       }
     };
 
-    fetchSavedJobs();
+    fetchSavedJobs().catch(err => {
+      console.error('Unhandled error in fetchSavedJobs:', err);
+      setError(err.message || 'Failed to fetch saved jobs');
+      setIsLoading(false);
+    });
   }, [user]);
 
   const saveJob = async (jobId) => {

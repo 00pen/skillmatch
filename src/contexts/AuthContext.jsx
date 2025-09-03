@@ -45,21 +45,31 @@ export const AuthProvider = ({ children }) => {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = auth.onAuthStateChange((event, session) => {
       console.log('Auth state change:', event, session?.user?.id);
-      try {
-        if (session?.user) {
-          setUser(session.user);
-          await loadUserProfile(session.user.id);
-        } else {
-          setUser(null);
-          setUserProfile(null);
+      
+      // Handle auth state change asynchronously with proper error handling
+      const handleAuthStateChange = async () => {
+        try {
+          if (session?.user) {
+            setUser(session.user);
+            await loadUserProfile(session.user.id);
+          } else {
+            setUser(null);
+            setUserProfile(null);
+          }
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Error in auth state change:', error);
-      } finally {
+      };
+      
+      // Execute async function with error handling
+      handleAuthStateChange().catch(error => {
+        console.error('Unhandled error in auth state change:', error);
         setIsLoading(false);
-      }
+      });
     });
 
     return () => {
@@ -77,6 +87,8 @@ export const AuthProvider = ({ children }) => {
       setUserProfile(profile);
     } catch (error) {
       console.error('Error loading user profile:', error);
+      // Set profile to null if there's an error to prevent infinite loading
+      setUserProfile(null);
     }
   };
 

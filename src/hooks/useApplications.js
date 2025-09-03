@@ -57,7 +57,11 @@ export const useApplications = () => {
       }
     };
 
-    fetchApplications();
+    fetchApplications().catch(err => {
+      console.error('Unhandled error in fetchApplications:', err);
+      setError(err.message || 'Failed to fetch applications');
+      setIsLoading(false);
+    });
   }, [user]);
 
   const createApplication = async (applicationData) => {

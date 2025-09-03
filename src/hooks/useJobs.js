@@ -50,7 +50,11 @@ export const useJobs = (filters = {}) => {
       }
     };
 
-    fetchJobs();
+    fetchJobs().catch(err => {
+      console.error('Unhandled error in fetchJobs:', err);
+      setError(err.message || 'Failed to fetch jobs');
+      setIsLoading(false);
+    });
   }, [JSON.stringify(filters)]);
 
   const refetch = () => {
@@ -96,7 +100,11 @@ export const useJobs = (filters = {}) => {
       }
     };
 
-    fetchJobs();
+    fetchJobs().catch(err => {
+      console.error('Unhandled error in refetch:', err);
+      setError(err.message || 'Failed to refetch jobs');
+      setIsLoading(false);
+    });
   };
 
   return { jobs, isLoading, error, refetch };
@@ -161,7 +169,11 @@ export const useJob = (jobId) => {
       }
     };
 
-    fetchJob();
+    fetchJob().catch(err => {
+      console.error('Unhandled error in fetchJob:', err);
+      setError(err.message || 'Failed to fetch job');
+      setIsLoading(false);
+    });
   }, [jobId]);
 
   return { job, isLoading, error };
