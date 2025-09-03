@@ -20,14 +20,21 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
 
   // Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    // Only redirect if we're not already on login/register pages to prevent infinite loops
+    if (location.pathname !== '/login' && location.pathname !== '/register') {
+      return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    }
+    return children;
   }
 
-  // Check role-based access
-  if (requiredRole && userProfile?.role !== requiredRole) {
+  // Check role-based access only if we have a complete user profile
+  if (requiredRole && userProfile && userProfile.role !== requiredRole) {
     // Redirect to appropriate dashboard based on user's actual role
-    const dashboardRoute = userProfile?.role === 'employer' ? '/employer-dashboard' : '/job-seeker-dashboard';
-    return <Navigate to={dashboardRoute} replace />;
+    const dashboardRoute = userProfile.role === 'employer' ? '/employer-dashboard' : '/job-seeker-dashboard';
+    // Prevent redirecting to the same route to avoid infinite loops
+    if (location.pathname !== dashboardRoute) {
+      return <Navigate to={dashboardRoute} replace />;
+    }
   }
 
   return children;

@@ -27,18 +27,25 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    
     // Get initial session
     const getInitialSession = async () => {
       try {
         const { user: currentUser } = await auth.getCurrentUser();
-        if (currentUser) {
+        if (mounted && currentUser) {
           setUser(currentUser);
-          await loadUserProfile(currentUser.id);
+          const { error } = await loadUserProfile(currentUser.id);
+          if (error) {
+            console.error('Profile loading failed:', error);
+          }
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -48,34 +55,46 @@ export const AuthProvider = ({ children }) => {
     const authListener = auth.onAuthStateChange((event, session) => {
       console.log('Auth state change:', event, session?.user?.id);
       
+      // Skip duplicate INITIAL_SESSION events if we already have a user
+      if (event === 'INITIAL_SESSION' && user && session?.user?.id === user.id) {
+        return;
+      }
+      
       // Handle auth state change asynchronously with proper error handling
       const handleAuthStateChange = async () => {
         try {
-          if (session?.user) {
-            setUser(session.user);
-            const { error } = await loadUserProfile(session.user.id);
-            if (error) {
-              console.error('Profile loading failed:', error);
+          if (mounted) {
+            if (session?.user) {
+              setUser(session.user);
+              const { error } = await loadUserProfile(session.user.id);
+              if (error) {
+                console.error('Profile loading failed:', error);
+              }
+            } else {
+              setUser(null);
+              setUserProfile(null);
             }
-          } else {
-            setUser(null);
-            setUserProfile(null);
           }
         } catch (error) {
           console.error('Error in auth state change:', error);
         } finally {
-          setIsLoading(false);
+          if (mounted) {
+            setIsLoading(false);
+          }
         }
       };
       
       // Execute async function with error handling
       handleAuthStateChange().catch(error => {
         console.error('Unhandled error in auth state change:', error);
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       });
     });
 
     return () => {
+      mounted = false;
       // Handle both Supabase and mock auth unsubscribe patterns
       if (authListener?.data?.subscription?.unsubscribe) {
         authListener.data.subscription.unsubscribe();
@@ -83,7 +102,7 @@ export const AuthProvider = ({ children }) => {
         authListener.unsubscribe();
       }
     };
-  }, []);
+  }, [user?.id]);
 
   const loadUserProfile = async (userId) => {
     try {

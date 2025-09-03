@@ -62,6 +62,7 @@ class LocalDatabase {
       const response = await axios.get(`${this.baseURL}/user-profiles/${userId}`);
       return { data: response.data, error: null };
     } catch (error) {
+      console.error('Database getUserProfile error:', error);
       return { data: null, error: error.response?.data?.error || error.message };
     }
   }
@@ -181,11 +182,19 @@ class MockAuth {
   }
 
   async getUserProfile(userId) {
-    const profile = this.profiles.find(p => p.user_id === userId);
-    if (!profile) {
-      return { data: null, error: { code: 'PGRST116', message: 'Profile not found' } };
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      const profile = this.profiles.find(p => p.user_id === userId);
+      if (!profile) {
+        return { data: null, error: { code: 'PGRST116', message: 'Profile not found' } };
+      }
+      return { data: profile, error: null };
+    } catch (error) {
+      console.error('MockAuth getUserProfile error:', error);
+      return { data: null, error: { message: error.message || 'Profile fetch error' } };
     }
-    return { data: profile, error: null };
   }
 
   async updateUserProfile(userId, updates) {
