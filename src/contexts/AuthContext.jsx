@@ -135,12 +135,17 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoading(true);
       const { error } = await auth.signOut();
-      if (!error) {
-        setUser(null);
-        setUserProfile(null);
-      }
+      
+      // Always clear local state regardless of Supabase response
+      // This ensures the UI updates immediately
+      setUser(null);
+      setUserProfile(null);
+      
       return { error };
     } catch (error) {
+      // Clear state even if signOut fails
+      setUser(null);
+      setUserProfile(null);
       return { error };
     } finally {
       setIsLoading(false);

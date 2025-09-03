@@ -58,10 +58,14 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
     setIsMobileMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    signOut();
-    setIsMobileMenuOpen(false);
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      setIsMobileMenuOpen(false);
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const toggleMobileMenu = () => {
