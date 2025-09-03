@@ -4,8 +4,9 @@ import { mockAuth } from './database.js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Use mock auth for development if Supabase credentials are missing or invalid
+// Use hybrid approach: PostgreSQL database with mock auth and local file storage
 const USE_MOCK_AUTH = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-project');
+const USE_LOCAL_DB = true; // Force local database usage for Replit environment
 
 let supabase = null;
 if (!USE_MOCK_AUTH) {
@@ -91,7 +92,7 @@ export const db = {
   },
 
   getUserProfile: async (userId) => {
-    if (USE_MOCK_AUTH || !supabase) {
+    if (USE_MOCK_AUTH || !supabase || USE_LOCAL_DB) {
       return await mockAuth.getUserProfile(userId);
     }
     
@@ -104,7 +105,7 @@ export const db = {
   },
 
   updateUserProfile: async (userId, updates) => {
-    if (USE_MOCK_AUTH || !supabase) {
+    if (USE_MOCK_AUTH || !supabase || USE_LOCAL_DB) {
       return await mockAuth.updateUserProfile(userId, updates);
     }
     
