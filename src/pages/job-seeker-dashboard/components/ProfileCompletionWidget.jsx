@@ -3,8 +3,45 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const ProfileCompletionWidget = ({ completionPercentage = 65, missingFields = [] }) => {
+const ProfileCompletionWidget = ({ userProfile }) => {
   const navigate = useNavigate();
+
+  const calculateProfileCompletion = () => {
+    if (!userProfile) return { percentage: 0, missingFields: [] };
+    
+    const fields = [
+      { key: 'full_name', label: 'Full Name' },
+      { key: 'location', label: 'Location' },
+      { key: 'phone', label: 'Phone Number' },
+      { key: 'bio', label: 'Bio' },
+      { key: 'current_job_title', label: 'Current Job Title' },
+      { key: 'industry', label: 'Industry' },
+      { key: 'linkedin_url', label: 'LinkedIn Profile' },
+      { key: 'github_url', label: 'GitHub Profile' },
+      { key: 'portfolio_url', label: 'Portfolio URL' },
+      { key: 'skills', label: 'Skills' },
+      { key: 'education', label: 'Education' },
+      { key: 'work_experience', label: 'Work Experience' }
+    ];
+    
+    const completedFields = fields.filter(field => {
+      const value = userProfile[field.key];
+      if (Array.isArray(value)) return value.length > 0;
+      return value && value.toString().trim();
+    });
+    
+    const missingFields = fields.filter(field => {
+      const value = userProfile[field.key];
+      if (Array.isArray(value)) return value.length === 0;
+      return !value || !value.toString().trim();
+    }).map(field => field.label);
+    
+    const percentage = Math.round((completedFields.length / fields.length) * 100);
+    
+    return { percentage, missingFields };
+  };
+
+  const { percentage: completionPercentage, missingFields } = calculateProfileCompletion();
 
   const handleCompleteProfile = () => {
     navigate('/profile');

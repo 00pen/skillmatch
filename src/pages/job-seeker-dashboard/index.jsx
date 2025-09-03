@@ -46,35 +46,6 @@ const JobSeekerDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Calculate profile completion
-  const calculateProfileCompletion = () => {
-    if (!userProfile) return 0;
-    
-    const fields = [
-      'full_name', 'location', 'current_job_title', 'bio', 
-      'linkedin_url', 'github_url', 'portfolio_url'
-    ];
-    
-    const completedFields = fields.filter(field => userProfile[field]);
-    return Math.round((completedFields.length / fields.length) * 100);
-  };
-  
-  const getMissingFields = () => {
-    if (!userProfile) return [];
-    
-    const fieldLabels = {
-      bio: 'Professional Summary',
-      linkedin_url: 'LinkedIn URL',
-      github_url: 'GitHub URL',
-      portfolio_url: 'Portfolio URL',
-      current_job_title: 'Current Job Title',
-      phone: 'Phone Number'
-    };
-    
-    return Object.entries(fieldLabels)
-      .filter(([field]) => !userProfile[field])
-      .map(([, label]) => label);
-  };
   
   // Transform recommended jobs for component
   const transformedRecommendedJobs = recommendedJobs?.slice(0, 3)?.map(job => ({
@@ -165,8 +136,7 @@ const JobSeekerDashboard = () => {
             {/* Sidebar Widgets */}
             <div className="space-y-6">
               <ProfileCompletionWidget 
-                completionPercentage={calculateProfileCompletion()}
-                missingFields={getMissingFields()}
+                userProfile={userProfile}
               />
               
               <ApplicationStatusTracker applications={applications} />
