@@ -6,24 +6,62 @@ import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
+import FileUpload from '../../components/ui/FileUpload';
+import Checkbox from '../../components/ui/Checkbox';
 import Icon from '../../components/AppIcon';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user, userProfile, updateProfile, deleteAccount } = useAuth();
   const [formData, setFormData] = useState({
+    // Basic Information
     full_name: '',
     location: '',
+    phone: '',
+    bio: '',
+    date_of_birth: '',
+    gender: '',
+    nationality: '',
+    
+    // Professional Information
     current_job_title: '',
     company_name: '',
     industry: '',
-    bio: '',
+    years_experience: '',
+    expected_salary_min: '',
+    expected_salary_max: '',
+    salary_currency: 'USD',
+    employment_type_preferences: [],
+    remote_work_preference: '',
+    availability: '',
+    notice_period: '',
+    
+    // Social Links
     website_url: '',
     linkedin_url: '',
     github_url: '',
     portfolio_url: '',
-    phone: ''
+    
+    // Skills & Qualifications
+    skills: [],
+    languages: [],
+    certifications: [],
+    
+    // Education
+    education: [],
+    
+    // Work Experience
+    work_experience: [],
+    
+    // Documents
+    resume_url: '',
+    cover_letter_url: '',
+    portfolio_files: []
   });
+  
+  const [resumeFile, setResumeFile] = useState(null);
+  const [coverLetterFile, setCoverLetterFile] = useState(null);
+  const [activeTab, setActiveTab] = useState('basic');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
@@ -40,21 +78,94 @@ const Profile = () => {
     { value: 'nonprofit', label: 'Non-Profit' },
     { value: 'other', label: 'Other' }
   ];
+  
+  const employmentTypes = [
+    { value: 'full-time', label: 'Full-time' },
+    { value: 'part-time', label: 'Part-time' },
+    { value: 'contract', label: 'Contract' },
+    { value: 'freelance', label: 'Freelance' },
+    { value: 'internship', label: 'Internship' },
+    { value: 'temporary', label: 'Temporary' }
+  ];
+  
+  const remotePreferences = [
+    { value: 'on-site', label: 'On-site only' },
+    { value: 'hybrid', label: 'Hybrid' },
+    { value: 'remote', label: 'Remote only' },
+    { value: 'flexible', label: 'Flexible' }
+  ];
+  
+  const experienceLevels = [
+    { value: '0-1', label: '0-1 years' },
+    { value: '1-3', label: '1-3 years' },
+    { value: '3-5', label: '3-5 years' },
+    { value: '5-10', label: '5-10 years' },
+    { value: '10+', label: '10+ years' }
+  ];
+  
+  const currencies = [
+    { value: 'USD', label: 'USD ($)' },
+    { value: 'EUR', label: 'EUR (€)' },
+    { value: 'GBP', label: 'GBP (£)' },
+    { value: 'CAD', label: 'CAD (C$)' },
+    { value: 'AUD', label: 'AUD (A$)' }
+  ];
+  
+  const tabs = [
+    { id: 'basic', label: 'Basic Info', icon: 'User' },
+    { id: 'professional', label: 'Professional', icon: 'Briefcase' },
+    { id: 'skills', label: 'Skills & Education', icon: 'BookOpen' },
+    { id: 'experience', label: 'Experience', icon: 'Clock' },
+    { id: 'documents', label: 'Documents', icon: 'FileText' },
+    { id: 'preferences', label: 'Preferences', icon: 'Settings' }
+  ];
 
   useEffect(() => {
     if (userProfile) {
       setFormData({
+        // Basic Information
         full_name: userProfile.full_name || '',
         location: userProfile.location || '',
+        phone: userProfile.phone || '',
+        bio: userProfile.bio || '',
+        date_of_birth: userProfile.date_of_birth || '',
+        gender: userProfile.gender || '',
+        nationality: userProfile.nationality || '',
+        
+        // Professional Information
         current_job_title: userProfile.current_job_title || '',
         company_name: userProfile.company_name || '',
         industry: userProfile.industry || '',
-        bio: userProfile.bio || '',
+        years_experience: userProfile.years_experience || '',
+        expected_salary_min: userProfile.expected_salary_min || '',
+        expected_salary_max: userProfile.expected_salary_max || '',
+        salary_currency: userProfile.salary_currency || 'USD',
+        employment_type_preferences: userProfile.employment_type_preferences || [],
+        remote_work_preference: userProfile.remote_work_preference || '',
+        availability: userProfile.availability || '',
+        notice_period: userProfile.notice_period || '',
+        
+        // Social Links
         website_url: userProfile.website_url || '',
         linkedin_url: userProfile.linkedin_url || '',
         github_url: userProfile.github_url || '',
         portfolio_url: userProfile.portfolio_url || '',
-        phone: userProfile.phone || ''
+        
+        // Skills & Qualifications
+        skills: userProfile.skills || [],
+        languages: userProfile.languages || [],
+        certifications: userProfile.certifications || [],
+        
+        // Education
+        education: userProfile.education || [],
+        
+        // Work Experience
+        work_experience: userProfile.work_experience || [],
+        
+        // Documents
+        resume_url: userProfile.resume_url || '',
+        cover_letter_url: userProfile.cover_letter_url || '',
+        portfolio_files: userProfile.portfolio_files || []
       });
     }
   }, [userProfile]);
@@ -63,6 +174,47 @@ const Profile = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+  
+  const addArrayItem = (arrayField, newItem) => {
+    setFormData(prev => ({
+      ...prev,
+      [arrayField]: [...prev[arrayField], newItem]
+    }));
+  };
+  
+  const updateArrayItem = (arrayField, index, updatedItem) => {
+    setFormData(prev => ({
+      ...prev,
+      [arrayField]: prev[arrayField].map((item, i) => i === index ? updatedItem : item)
+    }));
+  };
+  
+  const removeArrayItem = (arrayField, index) => {
+    setFormData(prev => ({
+      ...prev,
+      [arrayField]: prev[arrayField].filter((_, i) => i !== index)
+    }));
+  };
+  
+  const handleEmploymentTypeChange = (type, checked) => {
+    if (checked) {
+      handleInputChange('employment_type_preferences', [...formData.employment_type_preferences, type]);
+    } else {
+      handleInputChange('employment_type_preferences', formData.employment_type_preferences.filter(t => t !== type));
+    }
+  };
+  
+  const handleFileUpload = async (file, type) => {
+    // In a real application, you would upload to Supabase storage here
+    // For now, we'll just store the file reference
+    if (type === 'resume') {
+      setResumeFile(file);
+      handleInputChange('resume_url', file.name);
+    } else if (type === 'cover_letter') {
+      setCoverLetterFile(file);
+      handleInputChange('cover_letter_url', file.name);
     }
   };
 
@@ -121,7 +273,7 @@ const Profile = () => {
 
   const handleDeleteAccount = async () => {
     const confirmDelete = window.confirm(
-      'Are you absolutely sure you want to delete your account? This action cannot be undone and will permanently delete:\n\n• Your profile and personal information\n• All job applications\n• Saved jobs\n• Account history\n\nType "DELETE" to confirm:'
+      'Are you absolutely sure you want to delete your account? This action cannot be undone and will permanently delete:\\n\\n• Your profile and personal information\\n• All job applications\\n• Saved jobs\\n• Account history\\n\\nType "DELETE" to confirm:'
     );
     
     if (confirmDelete) {
@@ -186,128 +338,299 @@ const Profile = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-text-primary">Basic Information</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Full Name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={formData.full_name}
-                    onChange={(e) => handleInputChange('full_name', e.target.value)}
-                    error={errors.full_name}
-                    required
-                  />
-                  
-                  <Input
-                    label="Location"
-                    type="text"
-                    placeholder="City, State or Country"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                  />
-                </div>
-                
-                <Input
-                  label="Bio"
-                  type="textarea"
-                  placeholder="Tell us about yourself..."
-                  value={formData.bio}
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
-                  rows={4}
-                />
+              {/* Tab Navigation */}
+              <div className="border-b border-border mb-6">
+                <nav className="flex space-x-8">
+                  {tabs.map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`
+                        flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors
+                        ${
+                          activeTab === tab.id
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'
+                        }
+                      `}
+                    >
+                      <Icon name={tab.icon} size={16} />
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </nav>
               </div>
 
-              {/* Professional Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-text-primary">Professional Information</h3>
+              {/* Basic Information Tab */}
+              {activeTab === 'basic' && (
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-text-primary">Basic Information</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Current Job Title"
-                    type="text"
-                    placeholder="Your current position"
-                    value={formData.current_job_title}
-                    onChange={(e) => handleInputChange('current_job_title', e.target.value)}
-                  />
-                  
-                  <Input
-                    label="Company Name"
-                    type="text"
-                    placeholder="Your current company"
-                    value={formData.company_name}
-                    onChange={(e) => handleInputChange('company_name', e.target.value)}
-                  />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        label="Full Name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={formData.full_name}
+                        onChange={(e) => handleInputChange('full_name', e.target.value)}
+                        error={errors.full_name}
+                        required
+                      />
+                      
+                      <Input
+                        label="Phone Number"
+                        type="tel"
+                        placeholder="Your phone number"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Input
+                        label="Location"
+                        type="text"
+                        placeholder="City, State or Country"
+                        value={formData.location}
+                        onChange={(e) => handleInputChange('location', e.target.value)}
+                      />
+                      
+                      <Input
+                        label="Date of Birth"
+                        type="date"
+                        value={formData.date_of_birth}
+                        onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
+                      />
+                      
+                      <Select
+                        label="Gender"
+                        placeholder="Select gender"
+                        options={[
+                          { value: 'male', label: 'Male' },
+                          { value: 'female', label: 'Female' },
+                          { value: 'other', label: 'Other' },
+                          { value: 'prefer-not-to-say', label: 'Prefer not to say' }
+                        ]}
+                        value={formData.gender}
+                        onChange={(value) => handleInputChange('gender', value)}
+                      />
+                    </div>
+                    
+                    <Input
+                      label="Nationality"
+                      type="text"
+                      placeholder="Your nationality"
+                      value={formData.nationality}
+                      onChange={(e) => handleInputChange('nationality', e.target.value)}
+                    />
+                    
+                    <Input
+                      label="Bio"
+                      type="textarea"
+                      placeholder="Tell us about yourself..."
+                      value={formData.bio}
+                      onChange={(e) => handleInputChange('bio', e.target.value)}
+                      rows={4}
+                    />
+                  </div>
                 </div>
-                
-                <Select
-                  label="Industry"
-                  placeholder="Select your industry"
-                  options={industries}
-                  value={formData.industry}
-                  onChange={(value) => handleInputChange('industry', value)}
-                />
-              </div>
+              )}
 
-              {/* Contact Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-text-primary">Contact Information</h3>
-                
-                <Input
-                  label="Phone Number"
-                  type="tel"
-                  placeholder="Your phone number"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                />
-              </div>
+              {/* Professional Information Tab */}
+              {activeTab === 'professional' && (
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-text-primary">Professional Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        label="Current Job Title"
+                        type="text"
+                        placeholder="Your current position"
+                        value={formData.current_job_title}
+                        onChange={(e) => handleInputChange('current_job_title', e.target.value)}
+                      />
+                      
+                      <Input
+                        label="Company Name"
+                        type="text"
+                        placeholder="Your current company"
+                        value={formData.company_name}
+                        onChange={(e) => handleInputChange('company_name', e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Select
+                        label="Industry"
+                        placeholder="Select your industry"
+                        options={industries}
+                        value={formData.industry}
+                        onChange={(value) => handleInputChange('industry', value)}
+                      />
+                      
+                      <Select
+                        label="Years of Experience"
+                        placeholder="Select experience level"
+                        options={experienceLevels}
+                        value={formData.years_experience}
+                        onChange={(value) => handleInputChange('years_experience', value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h4 className="text-md font-medium text-text-primary">Social Links</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          label="Website URL"
+                          type="url"
+                          placeholder="https://your-website.com"
+                          value={formData.website_url}
+                          onChange={(e) => handleInputChange('website_url', e.target.value)}
+                          error={errors.website_url}
+                        />
+                        
+                        <Input
+                          label="LinkedIn URL"
+                          type="url"
+                          placeholder="https://linkedin.com/in/yourprofile"
+                          value={formData.linkedin_url}
+                          onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
+                          error={errors.linkedin_url}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          label="GitHub URL"
+                          type="url"
+                          placeholder="https://github.com/yourusername"
+                          value={formData.github_url}
+                          onChange={(e) => handleInputChange('github_url', e.target.value)}
+                          error={errors.github_url}
+                        />
+                        
+                        <Input
+                          label="Portfolio URL"
+                          type="url"
+                          placeholder="https://your-portfolio.com"
+                          value={formData.portfolio_url}
+                          onChange={(e) => handleInputChange('portfolio_url', e.target.value)}
+                          error={errors.portfolio_url}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              {/* Social Links */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-text-primary">Social Links</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Website URL"
-                    type="url"
-                    placeholder="https://your-website.com"
-                    value={formData.website_url}
-                    onChange={(e) => handleInputChange('website_url', e.target.value)}
-                    error={errors.website_url}
-                  />
-                  
-                  <Input
-                    label="LinkedIn URL"
-                    type="url"
-                    placeholder="https://linkedin.com/in/yourprofile"
-                    value={formData.linkedin_url}
-                    onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
-                    error={errors.linkedin_url}
-                  />
+              {/* Documents Tab */}
+              {activeTab === 'documents' && (
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-text-primary">Documents & Files</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FileUpload
+                        label="Resume/CV"
+                        description="Upload your resume or CV (PDF, DOC, DOCX)"
+                        acceptedFileTypes=".pdf,.doc,.docx"
+                        currentFile={resumeFile}
+                        onFileSelect={(file) => handleFileUpload(file, 'resume')}
+                        required
+                      />
+                      
+                      <FileUpload
+                        label="Cover Letter"
+                        description="Upload your cover letter (PDF, DOC, DOCX)"
+                        acceptedFileTypes=".pdf,.doc,.docx"
+                        currentFile={coverLetterFile}
+                        onFileSelect={(file) => handleFileUpload(file, 'cover_letter')}
+                      />
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="GitHub URL"
-                    type="url"
-                    placeholder="https://github.com/yourusername"
-                    value={formData.github_url}
-                    onChange={(e) => handleInputChange('github_url', e.target.value)}
-                    error={errors.github_url}
-                  />
-                  
-                  <Input
-                    label="Portfolio URL"
-                    type="url"
-                    placeholder="https://your-portfolio.com"
-                    value={formData.portfolio_url}
-                    onChange={(e) => handleInputChange('portfolio_url', e.target.value)}
-                    error={errors.portfolio_url}
-                  />
+              )}
+
+              {/* Preferences Tab */}
+              {activeTab === 'preferences' && (
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-text-primary">Job Preferences</h3>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-3">
+                          Employment Type Preferences
+                        </label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {employmentTypes.map(type => (
+                            <Checkbox
+                              key={type.value}
+                              label={type.label}
+                              checked={formData.employment_type_preferences.includes(type.value)}
+                              onChange={(checked) => handleEmploymentTypeChange(type.value, checked)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <Select
+                        label="Remote Work Preference"
+                        placeholder="Select remote work preference"
+                        options={remotePreferences}
+                        value={formData.remote_work_preference}
+                        onChange={(value) => handleInputChange('remote_work_preference', value)}
+                      />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Input
+                          label="Expected Salary (Min)"
+                          type="number"
+                          placeholder="50000"
+                          value={formData.expected_salary_min}
+                          onChange={(e) => handleInputChange('expected_salary_min', e.target.value)}
+                        />
+                        
+                        <Input
+                          label="Expected Salary (Max)"
+                          type="number"
+                          placeholder="80000"
+                          value={formData.expected_salary_max}
+                          onChange={(e) => handleInputChange('expected_salary_max', e.target.value)}
+                        />
+                        
+                        <Select
+                          label="Currency"
+                          options={currencies}
+                          value={formData.salary_currency}
+                          onChange={(value) => handleInputChange('salary_currency', value)}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          label="Availability"
+                          type="text"
+                          placeholder="e.g., Available immediately"
+                          value={formData.availability}
+                          onChange={(e) => handleInputChange('availability', e.target.value)}
+                        />
+                        
+                        <Input
+                          label="Notice Period"
+                          type="text"
+                          placeholder="e.g., 2 weeks, 1 month"
+                          value={formData.notice_period}
+                          onChange={(e) => handleInputChange('notice_period', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Success/Error Messages */}
               {successMessage && (

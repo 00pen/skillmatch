@@ -132,6 +132,59 @@ export const db = {
 
   // Jobs
   getJobs: async (filters = {}) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      // Return mock jobs data for development
+      return {
+        data: [
+          {
+            id: 1,
+            title: 'Senior Software Engineer',
+            description: 'We are looking for a Senior Software Engineer to join our growing team.',
+            location: 'San Francisco, CA',
+            job_type: 'full-time',
+            experience_level: 'senior',
+            salary_min: 120000,
+            salary_max: 150000,
+            salary_currency: 'USD',
+            is_remote: true,
+            created_at: '2024-01-15T10:00:00Z',
+            companies: {
+              id: 1,
+              name: 'TechCorp Inc.',
+              logo_url: null,
+              industry: 'technology',
+              size: '100-500',
+              description: 'Leading technology company'
+            },
+            skills_required: ['React', 'Node.js', 'JavaScript', 'Python']
+          },
+          {
+            id: 2,
+            title: 'Product Marketing Manager',
+            description: 'Join our marketing team to drive product growth and user engagement.',
+            location: 'New York, NY',
+            job_type: 'full-time',
+            experience_level: 'mid',
+            salary_min: 90000,
+            salary_max: 110000,
+            salary_currency: 'USD',
+            is_remote: false,
+            created_at: '2024-01-14T15:30:00Z',
+            companies: {
+              id: 2,
+              name: 'StartupXYZ',
+              logo_url: null,
+              industry: 'technology',
+              size: '50-100',
+              description: 'Fast-growing startup'
+            },
+            skills_required: ['Product Marketing', 'Analytics', 'A/B Testing']
+          }
+        ],
+        error: null
+      };
+    }
+    
     let query = supabase
       .from('jobs')
       .select(`
@@ -179,6 +232,46 @@ export const db = {
   },
 
   getJobById: async (jobId) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      // Return mock job detail for development
+      const mockJob = {
+        id: parseInt(jobId),
+        title: 'Senior Software Engineer',
+        description: 'We are looking for a Senior Software Engineer to join our growing team. You will be responsible for building scalable web applications and leading technical initiatives.',
+        requirements: 'Bachelor\'s degree in Computer Science or related field. 5+ years of experience with React, Node.js, and cloud technologies.',
+        responsibilities: 'Lead development of new features, mentor junior developers, collaborate with product team, ensure code quality and best practices.',
+        benefits: 'Competitive salary, equity, health insurance, 401k matching, flexible PTO, remote work options.',
+        location: 'San Francisco, CA',
+        job_type: 'full-time',
+        employment_type: 'full-time',
+        experience_level: 'senior',
+        salary_min: 120000,
+        salary_max: 150000,
+        salary_currency: 'USD',
+        is_remote: true,
+        skills_required: ['React', 'Node.js', 'JavaScript', 'Python', 'AWS'],
+        application_deadline: '2024-03-01',
+        start_date: '2024-03-15',
+        contact_email: 'hiring@techcorp.com',
+        contact_phone: '+1 (555) 123-4567',
+        is_urgent: false,
+        application_instructions: 'Please include your portfolio and a brief cover letter.',
+        created_at: '2024-01-15T10:00:00Z',
+        companies: {
+          id: 1,
+          name: 'TechCorp Inc.',
+          logo_url: null,
+          industry: 'technology',
+          size: '100-500',
+          description: 'Leading technology company focused on innovative solutions.',
+          website: 'https://techcorp.com',
+          founded: '2010',
+          headquarters: 'San Francisco, CA'
+        }
+      };
+      return { data: mockJob, error: null };
+    }
+    
     const { data, error } = await supabase
       .from('jobs')
       .select(`

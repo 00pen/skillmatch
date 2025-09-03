@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange((event, session) => {
+    const authListener = auth.onAuthStateChange((event, session) => {
       console.log('Auth state change:', event, session?.user?.id);
       
       // Handle auth state change asynchronously with proper error handling
@@ -73,7 +73,12 @@ export const AuthProvider = ({ children }) => {
     });
 
     return () => {
-      subscription?.unsubscribe();
+      // Handle both Supabase and mock auth unsubscribe patterns
+      if (authListener?.data?.subscription?.unsubscribe) {
+        authListener.data.subscription.unsubscribe();
+      } else if (authListener?.unsubscribe) {
+        authListener.unsubscribe();
+      }
     };
   }, []);
 

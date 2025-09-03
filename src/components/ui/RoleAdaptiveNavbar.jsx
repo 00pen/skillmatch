@@ -36,6 +36,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
     if (userRole === 'employer') {
       return [
         { label: 'Dashboard', path: '/employer-dashboard', icon: 'LayoutDashboard', roles: ['employer'] },
+        { label: 'Post Job', path: '/create-job', icon: 'Plus', roles: ['employer'] },
         { label: 'Jobs', path: '/job-search-results', icon: 'Briefcase', roles: ['employer'] },
         { label: 'Candidates', path: '/candidates', icon: 'Users', roles: ['employer'] },
         ...commonItems

@@ -14,6 +14,10 @@ import ApplicationTracking from './pages/application-tracking';
 import Register from './pages/register';
 import Login from './pages/login';
 import Profile from './pages/profile';
+import JobPosting from './pages/job-posting/index';
+import CandidateBrowsing from './pages/candidates/index';
+import CandidateDetails from './pages/candidate-details/index';
+import CompanyDetails from './pages/company-details/index';
 
 const Routes = () => {
   return (
@@ -38,6 +42,11 @@ const Routes = () => {
                 <EmployerDashboard />
               </ProtectedRoute>
             } />
+            <Route path="/job-details/:id" element={
+              <ProtectedRoute>
+                <JobDetails />
+              </ProtectedRoute>
+            } />
             <Route path="/job-details" element={
               <ProtectedRoute>
                 <JobDetails />
@@ -56,6 +65,26 @@ const Routes = () => {
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/create-job" element={
+              <ProtectedRoute requiredRole="employer">
+                <JobPosting />
+              </ProtectedRoute>
+            } />
+            <Route path="/candidates" element={
+              <ProtectedRoute requiredRole="employer">
+                <CandidateBrowsing />
+              </ProtectedRoute>
+            } />
+            <Route path="/candidate/:id" element={
+              <ProtectedRoute requiredRole="employer">
+                <CandidateDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/:id" element={
+              <ProtectedRoute>
+                <CompanyDetails />
               </ProtectedRoute>
             } />
             
