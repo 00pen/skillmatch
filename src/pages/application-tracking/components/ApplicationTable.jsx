@@ -5,7 +5,7 @@ import Button from '../../../components/ui/Button';
 import ApplicationStatusBadge from './ApplicationStatusBadge';
 import ApplicationProgressIndicator from './ApplicationProgressIndicator';
 
-const ApplicationTable = ({ applications = [], onStatusUpdate, onWithdraw, onMessage }) => {
+const ApplicationTable = ({ applications = [], onStatusUpdate, onWithdraw, onDelete, onMessage }) => {
   const [selectedApplications, setSelectedApplications] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: 'appliedDate', direction: 'desc' });
   const navigate = useNavigate();
@@ -104,8 +104,31 @@ const ApplicationTable = ({ applications = [], onStatusUpdate, onWithdraw, onMes
               <Button variant="outline" size="sm" iconName="MessageSquare">
                 Message Employers
               </Button>
-              <Button variant="destructive" size="sm" iconName="Trash2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                iconName="X"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to withdraw ${selectedApplications.length} application(s)? This action cannot be undone.`)) {
+                    selectedApplications.forEach(id => onWithdraw && onWithdraw(id));
+                    setSelectedApplications([]);
+                  }
+                }}
+              >
                 Withdraw Selected
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                iconName="Trash2"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to permanently delete ${selectedApplications.length} application(s)? This action cannot be undone.`)) {
+                    selectedApplications.forEach(id => onDelete && onDelete(id));
+                    setSelectedApplications([]);
+                  }
+                }}
+              >
+                Delete Selected
               </Button>
             </div>
           </div>
@@ -195,12 +218,25 @@ const ApplicationTable = ({ applications = [], onStatusUpdate, onWithdraw, onMes
                         variant="ghost"
                         size="sm"
                         onClick={() => onWithdraw(application?.id)}
-                        iconName="Trash2"
-                        className="text-destructive hover:text-destructive"
+                        iconName="X"
+                        className="text-warning hover:text-warning"
                       >
                         Withdraw
                       </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to permanently delete this application? This action cannot be undone.')) {
+                          onDelete && onDelete(application?.id);
+                        }
+                      }}
+                      iconName="Trash2"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -241,13 +277,12 @@ const ApplicationTable = ({ applications = [], onStatusUpdate, onWithdraw, onMes
               <span>Updated: {getTimeAgo(application?.lastUpdated)}</span>
             </div>
             
-            <div className="flex items-center space-x-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/job-details', { state: { jobId: application?.jobId } })}
                 iconName="Eye"
-                className="flex-1"
               >
                 View Job
               </Button>
@@ -261,6 +296,30 @@ const ApplicationTable = ({ applications = [], onStatusUpdate, onWithdraw, onMes
                   Message
                 </Button>
               )}
+              {application?.status === 'applied' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onWithdraw(application?.id)}
+                  iconName="X"
+                  className="text-warning hover:text-warning"
+                >
+                  Withdraw
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to permanently delete this application? This action cannot be undone.')) {
+                    onDelete && onDelete(application?.id);
+                  }
+                }}
+                iconName="Trash2"
+                className="text-destructive hover:text-destructive"
+              >
+                Delete
+              </Button>
             </div>
           </div>
         ))}

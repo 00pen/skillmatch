@@ -166,6 +166,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      setIsLoading(true);
+      if (!user) throw new Error('No authenticated user');
+      
+      // First delete user profile and related data
+      const { error: profileError } = await db.deleteUserAccount(user.id);
+      if (profileError) throw profileError;
+      
+      // Then delete auth user
+      const { error: authError } = await auth.signOut();
+      
+      // Clear local state regardless of auth response
+      setUser(null);
+      setUserProfile(null);
+      
+      return { error: authError };
+    } catch (error) {
+      // Clear state even if deletion fails
+      setUser(null);
+      setUserProfile(null);
+      return { error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     user,
     userProfile,
@@ -175,7 +202,8 @@ export const AuthProvider = ({ children }) => {
     signUp,
     signIn,
     signOut,
-    updateProfile
+    updateProfile,
+    deleteAccount
   };
 
   return (

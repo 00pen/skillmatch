@@ -199,6 +199,25 @@ const EmployerDashboard = () => {
     navigate('/application-tracking', { state: { mode: 'employer' } });
   };
 
+  const handleDeleteJob = async (jobId) => {
+    if (window.confirm('Are you sure you want to delete this job posting? This action cannot be undone.')) {
+      try {
+        const { error } = await db.deleteJob(jobId);
+        if (error) {
+          console.error('Error deleting job:', error);
+          alert('Failed to delete job. Please try again.');
+        } else {
+          // Remove job from local state
+          setJobs(jobs.filter(job => job.id !== jobId));
+          alert('Job deleted successfully.');
+        }
+      } catch (error) {
+        console.error('Error deleting job:', error);
+        alert('Failed to delete job. Please try again.');
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -299,6 +318,7 @@ const EmployerDashboard = () => {
                         job={job}
                         onEdit={() => handleEditJob(job?.id)}
                         onViewApplicants={() => handleViewApplicants(job?.id)}
+                        onDelete={handleDeleteJob}
                       />
                     ))}
                   </div>

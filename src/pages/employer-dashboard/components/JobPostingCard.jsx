@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const JobPostingCard = ({ job, onEdit, onViewApplicants }) => {
+const JobPostingCard = ({ job, onEdit, onViewApplicants, onDelete }) => {
   const navigate = useNavigate();
 
   const getStatusColor = (status) => {
@@ -50,14 +50,24 @@ const JobPostingCard = ({ job, onEdit, onViewApplicants }) => {
           <p className="text-text-secondary text-sm mb-2">{job?.department} • {job?.location}</p>
           <p className="text-text-secondary text-sm">{job?.type} • ${job?.salaryRange}</p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onEdit}
-          className="text-text-secondary hover:text-text-primary"
-        >
-          <Icon name="Edit" size={16} />
-        </Button>
+        <div className="flex items-center space-x-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onEdit}
+            className="text-text-secondary hover:text-text-primary"
+          >
+            <Icon name="Edit" size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete && onDelete(job?.id)}
+            className="text-text-secondary hover:text-error"
+          >
+            <Icon name="Trash2" size={16} />
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-muted rounded-lg p-3">

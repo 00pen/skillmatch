@@ -10,7 +10,7 @@ import Icon from '../../components/AppIcon';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, userProfile, updateProfile } = useAuth();
+  const { user, userProfile, updateProfile, deleteAccount } = useAuth();
   const [formData, setFormData] = useState({
     full_name: '',
     location: '',
@@ -116,6 +116,34 @@ const Profile = () => {
       setErrors({ submit: 'Failed to update profile. Please try again.' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmDelete = window.confirm(
+      'Are you absolutely sure you want to delete your account? This action cannot be undone and will permanently delete:\n\n• Your profile and personal information\n• All job applications\n• Saved jobs\n• Account history\n\nType "DELETE" to confirm:'
+    );
+    
+    if (confirmDelete) {
+      const finalConfirm = window.prompt('Type "DELETE" to permanently delete your account:');
+      if (finalConfirm === 'DELETE') {
+        setIsLoading(true);
+        try {
+          const { error } = await deleteAccount();
+          if (error) {
+            console.error('Account deletion error:', error);
+            alert('Failed to delete account. Please try again or contact support.');
+          } else {
+            alert('Your account has been permanently deleted.');
+            navigate('/');
+          }
+        } catch (error) {
+          console.error('Account deletion error:', error);
+          alert('Failed to delete account. Please try again or contact support.');
+        } finally {
+          setIsLoading(false);
+        }
+      }
     }
   };
 
@@ -320,6 +348,35 @@ const Profile = () => {
                 </Button>
               </div>
             </form>
+          </div>
+          
+          {/* Danger Zone - Delete Account */}
+          <div className="bg-card border border-error rounded-lg shadow-card mt-8">
+            <div className="p-6 border-b border-error">
+              <h2 className="text-xl font-bold text-error">Danger Zone</h2>
+              <p className="text-text-secondary mt-1">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="mb-4 sm:mb-0">
+                  <h3 className="text-lg font-medium text-text-primary mb-1">Delete Account</h3>
+                  <p className="text-text-secondary text-sm">
+                    Permanently delete your account, profile, and all associated data including job applications and saved jobs.
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  iconName="Trash2"
+                  iconPosition="left"
+                >
+                  Delete Account
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

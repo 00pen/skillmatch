@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApplications } from '../../hooks/useApplications';
 import { useAuth } from '../../contexts/AuthContext';
+import { db } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
@@ -81,6 +82,23 @@ const ApplicationTracking = () => {
     if (window.confirm('Are you sure you want to withdraw this application? This action cannot be undone.')) {
       // In a real app, this would call an API to withdraw the application
       setFilteredApplications(filteredApplications?.filter(app => app?.id !== applicationId));
+    }
+  };
+
+  const handleDeleteApplication = async (applicationId) => {
+    try {
+      const { error } = await db.deleteApplication(applicationId);
+      if (error) {
+        console.error('Error deleting application:', error);
+        alert('Failed to delete application. Please try again.');
+      } else {
+        // Remove application from local state
+        setFilteredApplications(filteredApplications?.filter(app => app?.id !== applicationId));
+        alert('Application deleted successfully.');
+      }
+    } catch (error) {
+      console.error('Error deleting application:', error);
+      alert('Failed to delete application. Please try again.');
     }
   };
 
@@ -177,6 +195,7 @@ const ApplicationTracking = () => {
           applications={filteredApplications}
           onStatusUpdate={handleStatusUpdate}
           onWithdraw={handleWithdrawApplication}
+          onDelete={handleDeleteApplication}
           onMessage={handleMessageEmployer}
         />
 

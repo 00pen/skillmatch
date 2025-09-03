@@ -76,6 +76,15 @@ export const db = {
     return { data, error };
   },
 
+  deleteUserAccount: async (userId) => {
+    // This will cascade and delete related records
+    const { error } = await supabase
+      .from('user_profiles')
+      .delete()
+      .eq('user_id', userId);
+    return { error };
+  },
+
   // Jobs
   getJobs: async (filters = {}) => {
     let query = supabase
@@ -172,6 +181,14 @@ export const db = {
     return { data, error };
   },
 
+  deleteJob: async (jobId) => {
+    const { error } = await supabase
+      .from('jobs')
+      .delete()
+      .eq('id', jobId);
+    return { error };
+  },
+
   // Applications
   createApplication: async (applicationData) => {
     const { data, error } = await supabase
@@ -243,6 +260,14 @@ export const db = {
     return { data, error };
   },
 
+  deleteApplication: async (applicationId) => {
+    const { error } = await supabase
+      .from('applications')
+      .delete()
+      .eq('id', applicationId);
+    return { error };
+  },
+
   // Companies
   createCompany: async (companyData) => {
     const { data, error } = await supabase
@@ -285,6 +310,14 @@ export const db = {
       .select()
       .single();
     return { data, error };
+  },
+
+  deleteCompany: async (companyId) => {
+    const { error } = await supabase
+      .from('companies')
+      .delete()
+      .eq('id', companyId);
+    return { error };
   },
 
   // Saved Jobs
