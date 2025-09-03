@@ -207,14 +207,54 @@ const Profile = () => {
   };
   
   const handleFileUpload = async (file, type) => {
-    // In a real application, you would upload to Supabase storage here
-    // For now, we'll just store the file reference
-    if (type === 'resume') {
-      setResumeFile(file);
-      handleInputChange('resume_url', file.name);
-    } else if (type === 'cover_letter') {
-      setCoverLetterFile(file);
-      handleInputChange('cover_letter_url', file.name);
+    if (!file) return;
+
+    try {
+      setIsLoading(true);
+      
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${type}_${Date.now()}.${fileExt}`;
+      
+      // Upload to Supabase storage
+      const { supabase } = await import('../../lib/supabase');
+      if (supabase) {
+        const { data, error } = await supabase.storage
+          .from('user-files')
+          .upload(fileName, file);
+          
+        if (error) {
+          throw error;
+        }
+        
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('user-files')
+          .getPublicUrl(fileName);
+          
+        if (type === 'resume') {
+          setResumeFile(file);
+          handleInputChange('resume_url', publicUrl);
+        } else if (type === 'cover_letter') {
+          setCoverLetterFile(file);
+          handleInputChange('cover_letter_url', publicUrl);
+        }
+      } else {
+        // Fallback for development
+        if (type === 'resume') {
+          setResumeFile(file);
+          handleInputChange('resume_url', file.name);
+        } else if (type === 'cover_letter') {
+          setCoverLetterFile(file);
+          handleInputChange('cover_letter_url', file.name);
+        }
+      }
+      
+    } catch (error) {
+      console.error('File upload error:', error);
+      setErrors({ submit: 'Failed to upload file. Please try again.' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -521,6 +561,456 @@ const Profile = () => {
                           error={errors.portfolio_url}
                         />
                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Skills & Education Tab */}
+              {activeTab === 'skills' && (
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-text-primary">Skills & Qualifications</h3>
+                    
+                    {/* Skills Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-md font-medium text-text-primary">Technical Skills</h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addArrayItem('skills', { name: '', proficiency: 'intermediate', yearsExperience: 1 })}
+                          iconName="Plus"
+                          iconPosition="left"
+                        >
+                          Add Skill
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {formData.skills.map((skill, index) => (
+                          <div key={index} className="flex items-center space-x-3">
+                            <Input
+                              placeholder="e.g., JavaScript, React, Python"
+                              value={skill.name}
+                              onChange={(e) => updateArrayItem('skills', index, { ...skill, name: e.target.value })}
+                              className="flex-1"
+                            />
+                            <Select
+                              placeholder="Proficiency"
+                              options={[
+                                { value: 'beginner', label: 'Beginner' },
+                                { value: 'intermediate', label: 'Intermediate' },
+                                { value: 'advanced', label: 'Advanced' },
+                                { value: 'expert', label: 'Expert' }
+                              ]}
+                              value={skill.proficiency}
+                              onChange={(value) => updateArrayItem('skills', index, { ...skill, proficiency: value })}
+                              className="w-32"
+                            />
+                            <Input
+                              type="number"
+                              placeholder="Years"
+                              value={skill.yearsExperience}
+                              onChange={(e) => updateArrayItem('skills', index, { ...skill, yearsExperience: parseInt(e.target.value) })}
+                              className="w-20"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeArrayItem('skills', index)}
+                              iconName="Trash2"
+                              className="text-error hover:text-error"
+                            />
+                          </div>
+                        ))}
+                        
+                        {formData.skills.length === 0 && (
+                          <p className="text-text-secondary text-sm">No skills added yet. Click "Add Skill" to get started.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Languages Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-md font-medium text-text-primary">Languages</h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addArrayItem('languages', { name: '', proficiency: 'conversational' })}
+                          iconName="Plus"
+                          iconPosition="left"
+                        >
+                          Add Language
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {formData.languages.map((language, index) => (
+                          <div key={index} className="flex items-center space-x-3">
+                            <Input
+                              placeholder="e.g., English, Spanish, French"
+                              value={language.name}
+                              onChange={(e) => updateArrayItem('languages', index, { ...language, name: e.target.value })}
+                              className="flex-1"
+                            />
+                            <Select
+                              placeholder="Proficiency"
+                              options={[
+                                { value: 'basic', label: 'Basic' },
+                                { value: 'conversational', label: 'Conversational' },
+                                { value: 'fluent', label: 'Fluent' },
+                                { value: 'native', label: 'Native' }
+                              ]}
+                              value={language.proficiency}
+                              onChange={(value) => updateArrayItem('languages', index, { ...language, proficiency: value })}
+                              className="w-36"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeArrayItem('languages', index)}
+                              iconName="Trash2"
+                              className="text-error hover:text-error"
+                            />
+                          </div>
+                        ))}
+                        
+                        {formData.languages.length === 0 && (
+                          <p className="text-text-secondary text-sm">No languages added yet. Click "Add Language" to get started.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Education Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-md font-medium text-text-primary">Education</h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addArrayItem('education', { 
+                            institution: '', 
+                            degree: '', 
+                            field: '', 
+                            startDate: '', 
+                            endDate: '', 
+                            gpa: '',
+                            description: '' 
+                          })}
+                          iconName="Plus"
+                          iconPosition="left"
+                        >
+                          Add Education
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {formData.education.map((edu, index) => (
+                          <div key={index} className="p-4 border border-border rounded-lg space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Input
+                                label="Institution"
+                                placeholder="University/School name"
+                                value={edu.institution}
+                                onChange={(e) => updateArrayItem('education', index, { ...edu, institution: e.target.value })}
+                              />
+                              <Input
+                                label="Degree"
+                                placeholder="e.g., Bachelor of Science"
+                                value={edu.degree}
+                                onChange={(e) => updateArrayItem('education', index, { ...edu, degree: e.target.value })}
+                              />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Input
+                                label="Field of Study"
+                                placeholder="e.g., Computer Science"
+                                value={edu.field}
+                                onChange={(e) => updateArrayItem('education', index, { ...edu, field: e.target.value })}
+                              />
+                              <Input
+                                label="GPA (optional)"
+                                placeholder="e.g., 3.8"
+                                value={edu.gpa}
+                                onChange={(e) => updateArrayItem('education', index, { ...edu, gpa: e.target.value })}
+                              />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Input
+                                label="Start Date"
+                                type="date"
+                                value={edu.startDate}
+                                onChange={(e) => updateArrayItem('education', index, { ...edu, startDate: e.target.value })}
+                              />
+                              <Input
+                                label="End Date"
+                                type="date"
+                                value={edu.endDate}
+                                onChange={(e) => updateArrayItem('education', index, { ...edu, endDate: e.target.value })}
+                              />
+                            </div>
+                            
+                            <Input
+                              label="Description (optional)"
+                              type="textarea"
+                              placeholder="Relevant coursework, achievements, etc."
+                              value={edu.description}
+                              onChange={(e) => updateArrayItem('education', index, { ...edu, description: e.target.value })}
+                              rows={2}
+                            />
+                            
+                            <div className="flex justify-end">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeArrayItem('education', index)}
+                                iconName="Trash2"
+                                iconPosition="left"
+                                className="text-error hover:text-error"
+                              >
+                                Remove Education
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {formData.education.length === 0 && (
+                          <p className="text-text-secondary text-sm">No education records added yet. Click "Add Education" to get started.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Certifications Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-md font-medium text-text-primary">Certifications</h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addArrayItem('certifications', { 
+                            name: '', 
+                            issuer: '', 
+                            issueDate: '', 
+                            expiryDate: '', 
+                            credentialId: '',
+                            url: '' 
+                          })}
+                          iconName="Plus"
+                          iconPosition="left"
+                        >
+                          Add Certification
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {formData.certifications.map((cert, index) => (
+                          <div key={index} className="p-4 border border-border rounded-lg space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Input
+                                label="Certification Name"
+                                placeholder="e.g., AWS Certified Solutions Architect"
+                                value={cert.name}
+                                onChange={(e) => updateArrayItem('certifications', index, { ...cert, name: e.target.value })}
+                              />
+                              <Input
+                                label="Issuing Organization"
+                                placeholder="e.g., Amazon Web Services"
+                                value={cert.issuer}
+                                onChange={(e) => updateArrayItem('certifications', index, { ...cert, issuer: e.target.value })}
+                              />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Input
+                                label="Issue Date"
+                                type="date"
+                                value={cert.issueDate}
+                                onChange={(e) => updateArrayItem('certifications', index, { ...cert, issueDate: e.target.value })}
+                              />
+                              <Input
+                                label="Expiry Date (optional)"
+                                type="date"
+                                value={cert.expiryDate}
+                                onChange={(e) => updateArrayItem('certifications', index, { ...cert, expiryDate: e.target.value })}
+                              />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Input
+                                label="Credential ID (optional)"
+                                placeholder="Certificate ID or number"
+                                value={cert.credentialId}
+                                onChange={(e) => updateArrayItem('certifications', index, { ...cert, credentialId: e.target.value })}
+                              />
+                              <Input
+                                label="Verification URL (optional)"
+                                type="url"
+                                placeholder="https://..."
+                                value={cert.url}
+                                onChange={(e) => updateArrayItem('certifications', index, { ...cert, url: e.target.value })}
+                              />
+                            </div>
+                            
+                            <div className="flex justify-end">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeArrayItem('certifications', index)}
+                                iconName="Trash2"
+                                iconPosition="left"
+                                className="text-error hover:text-error"
+                              >
+                                Remove Certification
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {formData.certifications.length === 0 && (
+                          <p className="text-text-secondary text-sm">No certifications added yet. Click "Add Certification" to get started.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Work Experience Tab */}
+              {activeTab === 'experience' && (
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-text-primary">Work Experience</h3>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addArrayItem('work_experience', { 
+                          company: '', 
+                          position: '', 
+                          startDate: '', 
+                          endDate: '', 
+                          current: false,
+                          location: '',
+                          description: '',
+                          achievements: []
+                        })}
+                        iconName="Plus"
+                        iconPosition="left"
+                      >
+                        Add Experience
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      {formData.work_experience.map((exp, index) => (
+                        <div key={index} className="p-6 border border-border rounded-lg space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input
+                              label="Company"
+                              placeholder="e.g., Google Inc."
+                              value={exp.company}
+                              onChange={(e) => updateArrayItem('work_experience', index, { ...exp, company: e.target.value })}
+                            />
+                            <Input
+                              label="Position"
+                              placeholder="e.g., Senior Software Engineer"
+                              value={exp.position}
+                              onChange={(e) => updateArrayItem('work_experience', index, { ...exp, position: e.target.value })}
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Input
+                              label="Location"
+                              placeholder="e.g., San Francisco, CA"
+                              value={exp.location}
+                              onChange={(e) => updateArrayItem('work_experience', index, { ...exp, location: e.target.value })}
+                            />
+                            <Input
+                              label="Start Date"
+                              type="date"
+                              value={exp.startDate}
+                              onChange={(e) => updateArrayItem('work_experience', index, { ...exp, startDate: e.target.value })}
+                            />
+                            <div className="space-y-2">
+                              <Input
+                                label="End Date"
+                                type="date"
+                                value={exp.endDate}
+                                onChange={(e) => updateArrayItem('work_experience', index, { ...exp, endDate: e.target.value })}
+                                disabled={exp.current}
+                              />
+                              <Checkbox
+                                label="Currently working here"
+                                checked={exp.current}
+                                onChange={(checked) => updateArrayItem('work_experience', index, { ...exp, current: checked, endDate: checked ? '' : exp.endDate })}
+                              />
+                            </div>
+                          </div>
+                          
+                          <Input
+                            label="Job Description"
+                            type="textarea"
+                            placeholder="Describe your role and responsibilities..."
+                            value={exp.description}
+                            onChange={(e) => updateArrayItem('work_experience', index, { ...exp, description: e.target.value })}
+                            rows={4}
+                          />
+                          
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeArrayItem('work_experience', index)}
+                              iconName="Trash2"
+                              iconPosition="left"
+                              className="text-error hover:text-error"
+                            >
+                              Remove Experience
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {formData.work_experience.length === 0 && (
+                        <div className="text-center py-8">
+                          <Icon name="Briefcase" size={48} className="mx-auto text-text-secondary mb-4" />
+                          <h4 className="text-lg font-medium text-text-primary mb-2">No work experience added yet</h4>
+                          <p className="text-text-secondary mb-4">Add your work experience to showcase your professional background</p>
+                          <Button
+                            type="button"
+                            variant="default"
+                            onClick={() => addArrayItem('work_experience', { 
+                              company: '', 
+                              position: '', 
+                              startDate: '', 
+                              endDate: '', 
+                              current: false,
+                              location: '',
+                              description: '',
+                              achievements: []
+                            })}
+                            iconName="Plus"
+                            iconPosition="left"
+                          >
+                            Add Your First Experience
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

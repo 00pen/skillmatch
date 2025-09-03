@@ -53,7 +53,10 @@ export const AuthProvider = ({ children }) => {
         try {
           if (session?.user) {
             setUser(session.user);
-            await loadUserProfile(session.user.id);
+            const { error } = await loadUserProfile(session.user.id);
+            if (error) {
+              console.error('Profile loading failed:', error);
+            }
           } else {
             setUser(null);
             setUserProfile(null);
@@ -87,13 +90,15 @@ export const AuthProvider = ({ children }) => {
       const { data: profile, error } = await db.getUserProfile(userId);
       if (error && error.code !== 'PGRST116') { // Not found error
         console.error('Error loading user profile:', error);
-        return;
+        return { data: null, error };
       }
       setUserProfile(profile);
+      return { data: profile, error: null };
     } catch (error) {
       console.error('Error loading user profile:', error);
       // Set profile to null if there's an error to prevent infinite loading
       setUserProfile(null);
+      return { data: null, error };
     }
   };
 

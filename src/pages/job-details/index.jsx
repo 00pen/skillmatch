@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useJobs, useJob } from '../../hooks/useJobs';
 import { useSavedJobs } from '../../hooks/useSavedJobs';
 import { useApplications } from '../../hooks/useApplications';
@@ -17,9 +17,9 @@ import Icon from '../../components/AppIcon';
 
 const JobDetails = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const { id } = useParams();
   const { user } = useAuth();
-  const jobId = searchParams?.get('id') || '1';
+  const jobId = id || '1';
   
   // Use custom hooks
   const { job, isLoading, error } = useJob(jobId);

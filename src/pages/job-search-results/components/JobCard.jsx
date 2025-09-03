@@ -10,7 +10,7 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
   const [isApplying, setIsApplying] = useState(false);
 
   const handleViewDetails = () => {
-    navigate('/job-details', { state: { jobId: job?.id } });
+    navigate(`/job-details/${job?.id}`);
   };
 
   const handleSaveJob = async (e) => {
@@ -31,7 +31,7 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
         await onQuickApply(job?.id);
       } else {
         // Navigate to job details for full application
-        navigate(`/job-details?id=${job?.id}`);
+        navigate(`/job-details/${job?.id}`);
       }
     } finally {
       setIsApplying(false);

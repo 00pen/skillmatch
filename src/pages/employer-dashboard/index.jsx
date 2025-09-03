@@ -180,7 +180,7 @@ const EmployerDashboard = () => {
 
   const handlePostNewJob = () => {
     // Navigate to job posting creation
-    navigate('/job-details', { state: { mode: 'create' } });
+    navigate('/create-job');
   };
 
   const handleEditJob = (jobId) => {

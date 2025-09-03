@@ -25,7 +25,7 @@ const QuickActions = ({ onPostJob, onViewAllJobs, onManageApplications }) => {
       description: 'Search for potential candidates',
       icon: 'Search',
       variant: 'outline',
-      onClick: () => navigate('/job-search-results', { state: { mode: 'candidates' } })
+      onClick: () => navigate('/candidates')
     },
     {
       title: 'Manage Applications',
