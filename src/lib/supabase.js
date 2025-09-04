@@ -60,7 +60,7 @@ export const db = {
   createUserProfile: async (userId, profileData) => {
     const { data, error } = await supabase
       .from('user_profiles')
-      .insert([{ user_id: userId, ...profileData }])
+      .insert([{ id: userId, ...profileData }])
       .select()
       .single();
     return { data, error };
@@ -70,7 +70,7 @@ export const db = {
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .maybeSingle();
     return { data, error };
   },
@@ -110,6 +110,11 @@ export const db = {
       if (updates.languages !== undefined) {
         profileUpdates.languages = Array.isArray(updates.languages) 
           ? updates.languages 
+          : [];
+      }
+      if (updates.employment_type_preferences !== undefined) {
+        profileUpdates.employment_type_preferences = Array.isArray(updates.employment_type_preferences) 
+          ? updates.employment_type_preferences 
           : [];
       }
     
@@ -159,9 +164,10 @@ export const db = {
       
       // Manual cleanup if RPC function doesn't exist
       const deletions = [
-        supabase.from('user_skills').delete().eq('user_id', userId),
         supabase.from('saved_jobs').delete().eq('user_id', userId),
         supabase.from('applications').delete().eq('user_id', userId),
+        supabase.from('messages').delete().eq('sender_id', userId),
+        supabase.from('messages').delete().eq('recipient_id', userId),
         supabase.from('user_profiles').delete().eq('id', userId)
       ];
       
@@ -392,25 +398,19 @@ export const db = {
 
   deleteApplication: async (applicationId, userId) => {
     try {
-      // Use the enhanced deletion function that includes activity tracking
-      const { data, error } = await supabase.rpc('delete_application_with_activity', {
-        p_application_id: applicationId,
-        p_user_id: userId
-      });
+      // Direct deletion from applications table
+      const { error: deleteError } = await supabase
+        .from('applications')
+        .delete()
+        .eq('id', applicationId)
+        .eq('user_id', userId);
       
-      if (error) {
-        console.error('Application deletion function error:', error);
-        // Fallback to direct deletion
-        const { error: deleteError } = await supabase
-          .from('applications')
-          .delete()
-          .eq('id', applicationId)
-          .eq('user_id', userId);
-        
+      if (deleteError) {
+        console.error('Application deletion error:', deleteError);
         return { error: deleteError };
       }
       
-      return { data, error: data?.success ? null : { message: data?.message || 'Deletion failed' } };
+      return { data: { success: true }, error: null };
     } catch (err) {
       console.error('Application deletion error:', err);
       return { error: err };
