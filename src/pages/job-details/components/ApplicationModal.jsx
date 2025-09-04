@@ -142,7 +142,7 @@ const ApplicationModal = ({ isOpen, onClose, job, onSubmit }) => {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto"
       onClick={handleOverlayClick}
     >
-      <div className="bg-card border border-border rounded-lg shadow-modal w-full max-w-2xl max-h-[85vh] overflow-hidden my-auto">
+      <div className="bg-card border border-border rounded-lg shadow-modal w-full max-w-2xl max-h-[90vh] overflow-hidden my-4 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
@@ -161,7 +161,7 @@ const ApplicationModal = ({ isOpen, onClose, job, onSubmit }) => {
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(85vh-120px)]">
+        <div className="flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Cover Letter */}
             <div>
@@ -264,7 +264,7 @@ const ApplicationModal = ({ isOpen, onClose, job, onSubmit }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-border bg-muted">
+        <div className="flex items-center justify-between p-6 border-t border-border bg-muted flex-shrink-0">
           <div className="text-sm text-text-secondary">
             Your application will be sent directly to {job?.company?.name}
           </div>
