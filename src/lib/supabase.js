@@ -79,13 +79,41 @@ export const db = {
         return { data: null, error };
       }
 
-      // If profile doesn't exist, create one
+      // If profile doesn't exist, check if the user's email was previously deleted
       if (!data) {
+        // Get the current user's email from auth
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          console.error('Error getting auth user:', authError);
+          return { data: null, error: authError };
+        }
+
+        // Check if this email was previously deleted
+        const { data: isDeleted, error: checkError } = await supabase.rpc('is_email_deleted', {
+          p_email: user.email
+        });
+        
+        if (checkError) {
+          console.error('Email deletion check error:', checkError);
+          return { data: null, error: checkError };
+        }
+        
+        if (isDeleted) {
+          // Sign out the user and return an error
+          await supabase.auth.signOut();
+          return { 
+            data: null, 
+            error: new Error('This account was previously deleted and cannot be used. Please contact support if you need assistance.') 
+          };
+        }
+
+        // Create a new profile only if the email wasn't deleted
         const { data: newProfile, error: createError } = await supabase
           .from('user_profiles')
           .insert([{
             id: userId,
-            email: '', // Will be filled by auth trigger
+            email: user.email,
             full_name: '',
             role: 'job_seeker',
             profile_completion: 0,

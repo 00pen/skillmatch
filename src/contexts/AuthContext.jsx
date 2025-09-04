@@ -142,6 +142,24 @@ export const AuthProvider = ({ children }) => {
   const signUp = async (email, password, userData) => {
     try {
       setIsLoading(true);
+      
+      // First check if the email was previously deleted
+      const { data: isDeleted, error: checkError } = await supabase.rpc('is_email_deleted', {
+        p_email: email
+      });
+      
+      if (checkError) {
+        console.error('Email deletion check error:', checkError);
+        return { data: null, error: checkError };
+      }
+      
+      if (isDeleted) {
+        return { 
+          data: null, 
+          error: new Error('This email address was previously deleted and cannot be used to create a new account. Please contact support if you need assistance.') 
+        };
+      }
+      
       const { data, error } = await auth.signUp(email, password, userData);
       
       if (error) throw error;
