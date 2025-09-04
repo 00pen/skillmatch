@@ -57,7 +57,6 @@ export const auth = {
 export const db = {
   // Users
   createUserProfile: async (userId, profileData) => {
-    
     const { data, error } = await supabase
       .from('user_profiles')
       .insert([{ user_id: userId, ...profileData }])
@@ -67,7 +66,6 @@ export const db = {
   },
 
   getUserProfile: async (userId) => {
-    
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
@@ -77,54 +75,86 @@ export const db = {
   },
 
   updateUserProfile: async (userId, updates) => {
+    try {
+      // Force schema refresh by doing a simple select first
+      await supabase.from('user_profiles').select('id').eq('id', userId).limit(1);
+      
+      // Prepare updates with proper defaults for JSONB fields
+      const profileUpdates = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Ensure JSONB fields have proper format
+      if (updates.certifications !== undefined) {
+        profileUpdates.certifications = Array.isArray(updates.certifications) 
+          ? updates.certifications 
+          : [];
+      }
+      if (updates.education !== undefined) {
+        profileUpdates.education = Array.isArray(updates.education) 
+          ? updates.education 
+          : [];
+      }
+      if (updates.work_experience !== undefined) {
+        profileUpdates.work_experience = Array.isArray(updates.work_experience) 
+          ? updates.work_experience 
+          : [];
+      }
+      if (updates.skills !== undefined) {
+        profileUpdates.skills = Array.isArray(updates.skills) 
+          ? updates.skills 
+          : [];
+      }
+      if (updates.languages !== undefined) {
+        profileUpdates.languages = Array.isArray(updates.languages) 
+          ? updates.languages 
+          : [];
+      }
     
-    // Don't filter fields - let Supabase handle validation based on actual table schema
-    // This prevents issues with missing columns like 'certifications'
-    const profileUpdates = {
-      ...updates,
-      updated_at: new Date().toISOString()
-    };
-    
-    
-    // First, check if profile exists, if not create it
-    const { data: existingProfile } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
-    
-    if (!existingProfile) {
-      // Create profile if it doesn't exist
-      const { data, error } = await supabase
+      // First, check if profile exists, if not create it
+      const { data: existingProfile } = await supabase
         .from('user_profiles')
-        .insert([{ id: userId, ...profileUpdates }])
-        .select()
-        .single();
-      return { data, error };
-    } else {
-      // Update existing profile
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .update(profileUpdates)
+        .select('id')
         .eq('id', userId)
-        .select()
-        .single();
-      return { data, error };
+        .maybeSingle();
+      
+      if (!existingProfile) {
+        // Create profile if it doesn't exist
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .insert([{ id: userId, ...profileUpdates }])
+          .select()
+          .single();
+        return { data, error };
+      } else {
+        // Update existing profile
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .update(profileUpdates)
+          .eq('id', userId)
+          .select()
+          .single();
+        return { data, error };
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      return { data: null, error };
     }
   },
 
   deleteUserAccount: async (userId) => {
     try {
       // First try to delete using the stored procedure
-      const { error: rpcError } = await supabase.rpc('delete_user_account', {
+      const { data, error } = await supabase.rpc('delete_user_account', {
         p_user_id: userId
       });
       
-      if (!rpcError) {
+      if (!error) {
         return { data: { success: true }, error: null };
       }
       
-      console.warn('RPC function not found, performing manual deletion:', rpcError);
+      console.warn('RPC function not found, performing manual deletion:', error);
       
       // Manual cleanup if RPC function doesn't exist
       const deletions = [
@@ -152,7 +182,6 @@ export const db = {
 
   // Jobs
   getJobs: async (filters = {}) => {
-    
     let query = supabase
       .from('jobs')
       .select(`
@@ -200,7 +229,6 @@ export const db = {
   },
 
   getJobById: async (jobId) => {
-    
     const { data, error } = await supabase
       .from('jobs')
       .select(`
@@ -258,7 +286,6 @@ export const db = {
 
   // Applications
   createApplication: async (applicationData) => {
-    
     try {
       // Use the enhanced application function if available
       const { data, error } = await supabase.rpc('submit_job_application', {
@@ -362,31 +389,31 @@ export const db = {
     return { data, error };
   },
 
-  deleteApplication: async (applicationId) => {
-    // Get application details before deletion for activity tracking
-    const { data: application } = await supabase
-      .from('applications')
-      .select('*, jobs(title, companies(name))')
-      .eq('id', applicationId)
-      .single();
-    
-    const { error } = await supabase
-      .from('applications')
-      .delete()
-      .eq('id', applicationId);
-    
-    // Add to activity feed if deletion was successful
-    if (!error && application) {
-      await db.addActivity(application.user_id, {
-        type: 'application_deleted',
-        title: 'Application Withdrawn',
-        description: `Withdrew application for ${application.jobs?.title} at ${application.jobs?.companies?.name}`,
-        related_id: applicationId,
-        related_type: 'application'
+  deleteApplication: async (applicationId, userId) => {
+    try {
+      // Use the enhanced deletion function that includes activity tracking
+      const { data, error } = await supabase.rpc('delete_application_with_activity', {
+        p_application_id: applicationId,
+        p_user_id: userId
       });
+      
+      if (error) {
+        console.error('Application deletion function error:', error);
+        // Fallback to direct deletion
+        const { error: deleteError } = await supabase
+          .from('applications')
+          .delete()
+          .eq('id', applicationId)
+          .eq('user_id', userId);
+        
+        return { error: deleteError };
+      }
+      
+      return { data, error: data?.success ? null : { message: data?.message || 'Deletion failed' } };
+    } catch (err) {
+      console.error('Application deletion error:', err);
+      return { error: err };
     }
-    
-    return { error };
   },
 
   // Companies
@@ -490,7 +517,6 @@ export const db = {
 
   // File Upload functionality
   uploadFile: async (file, bucket, filePath) => {
-    
     try {
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -514,7 +540,6 @@ export const db = {
   },
 
   deleteFile: async (bucket, filePath) => {
-    
     try {
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -528,7 +553,6 @@ export const db = {
   },
 
   getFileUrl: async (bucket, filePath) => {
-    
     try {
       const { data } = supabase.storage
         .from(bucket)
@@ -543,7 +567,6 @@ export const db = {
 
   // Skills
   getSkills: async () => {
-    
     const { data, error } = await supabase
       .from('skills')
       .select('*')

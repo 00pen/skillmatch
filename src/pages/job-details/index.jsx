@@ -19,7 +19,10 @@ const JobDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
-  const jobId = id;
+  
+  // Get job ID from URL params or query params for backward compatibility
+  const searchParams = new URLSearchParams(location.search);
+  const jobId = id || searchParams.get('id');
   
   // Redirect if no job ID is provided
   useEffect(() => {

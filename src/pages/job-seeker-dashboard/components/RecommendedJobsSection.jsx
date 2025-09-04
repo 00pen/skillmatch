@@ -14,7 +14,7 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
   const [selectedJobForQuickApply, setSelectedJobForQuickApply] = useState(null);
 
   const handleJobClick = (jobId) => {
-    navigate(`/job-details?id=${jobId}`);
+    navigate(`/job-details/${jobId}`);
   };
 
   const handleQuickApply = (e, jobId) => {

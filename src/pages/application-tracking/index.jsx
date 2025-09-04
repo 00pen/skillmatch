@@ -87,7 +87,7 @@ const ApplicationTracking = () => {
 
   const handleDeleteApplication = async (applicationId) => {
     try {
-      const { error } = await db.deleteApplication(applicationId);
+      const { error } = await db.deleteApplication(applicationId, user.id);
       if (error) {
         console.error('Error deleting application:', error);
         alert('Failed to delete application. Please try again.');
