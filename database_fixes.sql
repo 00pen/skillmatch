@@ -407,7 +407,7 @@ BEGIN
     END IF;
     
     -- Skills and links (10%)
-    IF profile_record.skills IS NOT NULL AND jsonb_array_length(profile_record.skills) > 0 THEN
+    IF profile_record.skills IS NOT NULL AND array_length(profile_record.skills, 1) > 0 THEN
         completion_percentage := completion_percentage + 10;
     END IF;
     
@@ -659,3 +659,48 @@ BEGIN
     RAISE NOTICE 'All schema issues have been resolved.';
     RAISE NOTICE 'Your application should now work without errors.';
 END $$;
+
+-- ============================================================================
+-- CREATE TRIGGERS FOR AUTOMATIC PROFILE CREATION
+-- ============================================================================
+
+-- Function to handle new user creation
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Insert a new profile for the user
+  INSERT INTO user_profiles (
+    id,
+    email,
+    full_name,
+    role,
+    profile_completion,
+    created_at,
+    updated_at
+  ) VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+    COALESCE(NEW.raw_user_meta_data->>'role', 'job_seeker'),
+    0,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+  );
+  
+  RETURN NEW;
+EXCEPTION
+  WHEN unique_violation THEN
+    -- Profile already exists, ignore
+    RETURN NEW;
+  WHEN OTHERS THEN
+    -- Log error but don't fail the auth
+    RAISE WARNING 'Failed to create user profile: %', SQLERRM;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger for new user creation
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();

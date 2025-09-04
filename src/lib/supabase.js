@@ -67,12 +67,47 @@ export const db = {
   },
 
   getUserProfile: async (userId) => {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    return { data, error };
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return { data: null, error };
+      }
+
+      // If profile doesn't exist, create one
+      if (!data) {
+        const { data: newProfile, error: createError } = await supabase
+          .from('user_profiles')
+          .insert([{
+            id: userId,
+            email: '', // Will be filled by auth trigger
+            full_name: '',
+            role: 'job_seeker',
+            profile_completion: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating user profile:', createError);
+          return { data: null, error: createError };
+        }
+
+        return { data: newProfile, error: null };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error in getUserProfile:', error);
+      return { data: null, error };
+    }
   },
 
   updateUserProfile: async (userId, updates) => {
