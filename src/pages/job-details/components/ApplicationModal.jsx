@@ -139,10 +139,10 @@ const ApplicationModal = ({ isOpen, onClose, job, onSubmit }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black bg-opacity-50 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto"
       onClick={handleOverlayClick}
     >
-      <div className="bg-card border border-border rounded-lg shadow-modal w-full max-w-2xl max-h-[90vh] overflow-hidden my-4 mx-auto">
+      <div className="bg-card border border-border rounded-lg shadow-modal w-full max-w-2xl max-h-[85vh] overflow-hidden my-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
@@ -161,7 +161,7 @@ const ApplicationModal = ({ isOpen, onClose, job, onSubmit }) => {
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="overflow-y-auto max-h-[calc(85vh-120px)]">
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Cover Letter */}
             <div>
