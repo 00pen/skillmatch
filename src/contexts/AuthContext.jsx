@@ -111,6 +111,24 @@ export const AuthProvider = ({ children }) => {
         console.error('Error loading user profile:', error);
         return { data: null, error };
       }
+      
+      // If no profile exists, create a basic one
+      if (!profile) {
+        const { data: newProfile, error: createError } = await db.createUserProfile(userId, {
+          full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
+          email: user?.email,
+          role: user?.user_metadata?.role || 'job_seeker'
+        });
+        
+        if (createError) {
+          console.error('Error creating user profile:', createError);
+          return { data: null, error: createError };
+        }
+        
+        setUserProfile(newProfile);
+        return { data: newProfile, error: null };
+      }
+      
       setUserProfile(profile);
       return { data: profile, error: null };
     } catch (error) {

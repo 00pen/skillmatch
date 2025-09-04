@@ -93,7 +93,7 @@ const JobSeekerDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-text-primary">
-                  {getGreeting()}, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'there'}! 👋
+                  {getGreeting()}, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : (user?.email ? user.email.split('@')[0] : 'there')}! 👋
                 </h1>
                 <p className="text-text-secondary mt-1">
                   {(!userProfile?.full_name || !userProfile?.location || !userProfile?.phone) 

@@ -77,9 +77,6 @@ export const db = {
 
   updateUserProfile: async (userId, updates) => {
     try {
-      // Force schema refresh by doing a simple select first
-      await supabase.from('user_profiles').select('id').eq('id', userId).limit(1);
-      
       // Prepare updates with proper defaults for JSONB fields
       const profileUpdates = {
         ...updates,
@@ -151,23 +148,10 @@ export const db = {
 
   deleteUserAccount: async (userId) => {
     try {
-      // First try to delete using the stored procedure
-      const { data, error } = await supabase.rpc('delete_user_account', {
-        p_user_id: userId
-      });
-      
-      if (!error) {
-        return { data: { success: true }, error: null };
-      }
-      
-      console.warn('RPC function not found, performing manual deletion:', error);
-      
-      // Manual cleanup if RPC function doesn't exist
+      // Manual cleanup - delete all user data
       const deletions = [
         supabase.from('saved_jobs').delete().eq('user_id', userId),
         supabase.from('applications').delete().eq('user_id', userId),
-        supabase.from('messages').delete().eq('sender_id', userId),
-        supabase.from('messages').delete().eq('recipient_id', userId),
         supabase.from('user_profiles').delete().eq('id', userId)
       ];
       
@@ -178,6 +162,13 @@ export const db = {
       if (errors.length > 0) {
         console.error('Some deletions failed:', errors);
         return { error: errors[0] };
+      }
+      
+      // Finally, delete the auth user
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      if (authError) {
+        console.error('Auth user deletion failed:', authError);
+        return { error: authError };
       }
       
       return { data: { success: true }, error: null };
