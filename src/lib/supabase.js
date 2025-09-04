@@ -16,6 +16,7 @@ console.log('Supabase Configuration:', {
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export { supabase };
+export default supabase;
 
 // Auth helpers - Supabase only, no mock fallbacks
 export const auth = {

@@ -127,14 +127,14 @@ const JobSeekerDashboard = () => {
           <JobSearchBar className="mb-8" />
 
           {/* Main Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Main Content - Recommended Jobs */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-6 lg:space-y-8 order-2 lg:order-1">
               <RecommendedJobsSection recommendedJobs={transformedRecommendedJobs} />
             </div>
 
             {/* Sidebar Widgets */}
-            <div className="space-y-6">
+            <div className="space-y-4 lg:space-y-6 order-1 lg:order-2">
               <ProfileCompletionWidget 
                 userProfile={userProfile}
               />
@@ -165,9 +165,9 @@ const JobSeekerDashboard = () => {
           </div>
 
           {/* Quick Actions Footer */}
-          <div className="mt-12 bg-card border border-border rounded-lg p-6 shadow-card">
+          <div className="mt-8 lg:mt-12 bg-card border border-border rounded-lg p-4 lg:p-6 shadow-card">
             <h3 className="text-lg font-semibold text-text-primary mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               <button
                 onClick={() => navigate('/job-search-results')}
                 className="flex items-center space-x-3 p-4 bg-muted rounded-lg hover:bg-accent transition-colors duration-150"

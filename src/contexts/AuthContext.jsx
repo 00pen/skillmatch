@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db } from '../lib/supabase';
+import { auth, db, supabase } from '../lib/supabase';
 
 const AuthContext = createContext({
   user: null,
@@ -214,17 +214,9 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       if (!user) throw new Error('No authenticated user');
       
-      // Use the proper account deletion function from our SQL migration
-      if (supabase) {
-        const { error: deletionError } = await supabase.rpc('delete_user_account', {
-          user_id_to_delete: user.id
-        });
-        if (deletionError) throw deletionError;
-      } else {
-        // Fallback for mock auth
-        const { error: profileError } = await db.deleteUserAccount(user.id);
-        if (profileError) throw profileError;
-      }
+      // Use the proper account deletion function from Supabase
+      const { error: deletionError } = await db.deleteUserAccount(user.id);
+      if (deletionError) throw deletionError;
       
       // Clear local state
       setUser(null);
