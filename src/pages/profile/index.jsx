@@ -216,7 +216,7 @@ const Profile = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${type}_${Date.now()}.${fileExt}`;
       
-      // For Replit environment, we'll simulate file upload and store metadata
+      // Simulate file upload and store metadata
       // In production, you'd upload to actual storage service
       const fileUrl = `/uploads/user-files/${user.id}/${fileName}`;
       
