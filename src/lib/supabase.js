@@ -191,11 +191,6 @@ export const db = {
           industry,
           size,
           description
-        ),
-        job_skills (
-          skills (
-            name
-          )
         )
       `)
       .eq('status', 'active');
@@ -223,7 +218,14 @@ export const db = {
     }
 
     const { data, error } = await query.order('created_at', { ascending: false });
-    return { data, error };
+    
+    // Transform data to include skills from skills_required array
+    const transformedData = data?.map(job => ({
+      ...job,
+      skills: job.skills_required || []
+    })) || [];
+    
+    return { data: transformedData, error };
   },
 
   getJobById: async (jobId) => {
@@ -241,18 +243,27 @@ export const db = {
           website,
           founded,
           headquarters
-        ),
-        job_skills (
-          is_required,
-          skills (
-            name,
-            category
-          )
         )
       `)
       .eq('id', jobId)
       .maybeSingle();
-    return { data, error };
+      
+    if (error) {
+      return { data: null, error };
+    }
+    
+    if (!data) {
+      return { data: null, error: { message: 'Job not found' } };
+    }
+    
+    // Transform data to include skills from skills_required array
+    const transformedData = {
+      ...data,
+      requiredSkills: data.skills_required || [],
+      preferredSkills: []
+    };
+    
+    return { data: transformedData, error: null };
   },
 
   createJob: async (jobData) => {

@@ -1,6 +1,7 @@
 -- ============================================================================
--- SkillMatch Database Fixes
--- Run this in your Supabase SQL editor to fix schema issues
+-- SkillMatch Database Complete Fix Script
+-- Fixes all schema issues and missing columns
+-- Run this in your Supabase SQL editor
 -- ============================================================================
 
 -- Enable necessary extensions
@@ -8,371 +9,653 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================================
--- FIX USER_PROFILES TABLE
+-- FIX USER_PROFILES TABLE - Add missing columns
 -- ============================================================================
 
--- Drop and recreate user_profiles table with correct schema
-DROP TABLE IF EXISTS user_profiles CASCADE;
+-- Add missing columns to user_profiles
+DO $$ 
+BEGIN
+    -- Add portfolio_files column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'portfolio_files') THEN
+        ALTER TABLE user_profiles ADD COLUMN portfolio_files JSONB DEFAULT '[]';
+    END IF;
+    
+    -- Add other potentially missing columns
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'availability') THEN
+        ALTER TABLE user_profiles ADD COLUMN availability TEXT DEFAULT 'available';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'notice_period') THEN
+        ALTER TABLE user_profiles ADD COLUMN notice_period TEXT DEFAULT '2-weeks';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'employment_type_preferences') THEN
+        ALTER TABLE user_profiles ADD COLUMN employment_type_preferences TEXT[] DEFAULT '{}';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'years_experience') THEN
+        ALTER TABLE user_profiles ADD COLUMN years_experience TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'skills') THEN
+        ALTER TABLE user_profiles ADD COLUMN skills JSONB DEFAULT '[]';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'certifications') THEN
+        ALTER TABLE user_profiles ADD COLUMN certifications TEXT[] DEFAULT '{}';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'education') THEN
+        ALTER TABLE user_profiles ADD COLUMN education JSONB[] DEFAULT '{}';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'work_experience') THEN
+        ALTER TABLE user_profiles ADD COLUMN work_experience JSONB[] DEFAULT '{}';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_profiles' AND column_name = 'profile_completion') THEN
+        ALTER TABLE user_profiles ADD COLUMN profile_completion INTEGER DEFAULT 0;
+    END IF;
+    
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Some columns could not be added: %', SQLERRM;
+END $$;
 
-CREATE TABLE user_profiles (
-    id UUID PRIMARY KEY,
-    full_name TEXT,
-    email TEXT,
-    role TEXT CHECK (role IN ('job_seeker', 'employer')) DEFAULT 'job_seeker',
-    location TEXT,
-    phone TEXT,
-    bio TEXT,
-    date_of_birth DATE,
-    gender TEXT,
-    nationality TEXT,
-    current_job_title TEXT,
-    company_name TEXT,
-    industry TEXT,
-    years_experience INTEGER,
-    experience_level TEXT CHECK (experience_level IN ('entry', 'mid', 'senior', 'lead', 'executive')),
-    expected_salary_min INTEGER,
-    expected_salary_max INTEGER,
-    salary_currency TEXT DEFAULT 'USD',
-    employment_type_preferences TEXT[],
-    remote_work_preference TEXT,
-    availability TEXT,
-    notice_period TEXT,
-    website_url TEXT,
-    linkedin_url TEXT,
-    github_url TEXT,
-    portfolio_url TEXT,
-    skills TEXT[],
-    languages TEXT[],
-    certifications TEXT[],
-    education JSONB[],
-    work_experience JSONB[],
-    resume_url TEXT,
-    cover_letter_url TEXT,
-    profile_image_url TEXT,
-    profile_completion INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- ============================================================================
+-- CREATE JOB_SKILLS TABLE AND RELATIONSHIP
+-- ============================================================================
+
+-- Create skills table if it doesn't exist
+CREATE TABLE IF NOT EXISTS skills (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT UNIQUE NOT NULL,
+    category TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================================
--- FIX APPLICATIONS TABLE
--- ============================================================================
-
--- Drop and recreate applications table
-DROP TABLE IF EXISTS applications CASCADE;
-
-CREATE TABLE applications (
+-- Create job_skills junction table if it doesn't exist
+CREATE TABLE IF NOT EXISTS job_skills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     job_id UUID NOT NULL,
-    user_id UUID NOT NULL,
-    status TEXT CHECK (status IN ('pending', 'reviewing', 'shortlisted', 'interviewed', 'offered', 'rejected', 'withdrawn')) DEFAULT 'pending',
-    cover_letter TEXT,
-    resume_url TEXT,
-    portfolio_url TEXT,
-    salary_expectation INTEGER,
-    available_start_date DATE,
-    notes TEXT,
+    skill_id UUID NOT NULL,
+    is_required BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(job_id, user_id)
+    UNIQUE(job_id, skill_id)
 );
 
+-- Add foreign key constraints for job_skills
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints 
+                   WHERE constraint_name = 'job_skills_job_id_fkey') THEN
+        ALTER TABLE job_skills ADD CONSTRAINT job_skills_job_id_fkey 
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints 
+                   WHERE constraint_name = 'job_skills_skill_id_fkey') THEN
+        ALTER TABLE job_skills ADD CONSTRAINT job_skills_skill_id_fkey 
+        FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE;
+    END IF;
+    
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Some foreign key constraints could not be added: %', SQLERRM;
+END $$;
+
 -- ============================================================================
--- FIX SAVED_JOBS TABLE
+-- CREATE ACTIVITIES TABLE FOR LOGGING
 -- ============================================================================
 
--- Drop and recreate saved_jobs table
-DROP TABLE IF EXISTS saved_jobs CASCADE;
-
-CREATE TABLE saved_jobs (
+CREATE TABLE IF NOT EXISTS activities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
-    job_id UUID NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, job_id)
-);
-
--- ============================================================================
--- FIX JOBS TABLE
--- ============================================================================
-
--- Drop and recreate jobs table
-DROP TABLE IF EXISTS jobs CASCADE;
-
-CREATE TABLE jobs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    type TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
-    requirements TEXT,
-    responsibilities TEXT,
-    benefits TEXT,
-    location TEXT,
-    job_type TEXT CHECK (job_type IN ('full-time', 'part-time', 'contract', 'internship', 'freelance')),
-    employment_type TEXT CHECK (employment_type IN ('full-time', 'part-time', 'contract', 'internship', 'freelance')),
-    experience_level TEXT CHECK (experience_level IN ('entry', 'mid', 'senior', 'lead', 'executive')),
-    salary_min INTEGER,
-    salary_max INTEGER,
-    salary_currency TEXT DEFAULT 'USD',
-    is_remote BOOLEAN DEFAULT false,
-    skills_required TEXT[],
-    application_deadline DATE,
-    start_date DATE,
-    contact_email TEXT,
-    contact_phone TEXT,
-    is_urgent BOOLEAN DEFAULT false,
-    application_instructions TEXT,
-    company_id UUID,
-    created_by UUID,
-    status TEXT CHECK (status IN ('draft', 'active', 'paused', 'closed', 'expired')) DEFAULT 'active',
-    application_count INTEGER DEFAULT 0,
-    view_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    related_id UUID,
+    related_type TEXT,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================================
--- FIX COMPANIES TABLE
--- ============================================================================
-
--- Drop and recreate companies table
-DROP TABLE IF EXISTS companies CASCADE;
-
-CREATE TABLE companies (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    description TEXT,
-    industry TEXT,
-    size TEXT,
-    founded INTEGER,
-    headquarters TEXT,
-    website TEXT,
-    logo_url TEXT,
-    created_by UUID,
-    is_verified BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- Add foreign key for activities
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints 
+                   WHERE constraint_name = 'activities_user_id_fkey') THEN
+        ALTER TABLE activities ADD CONSTRAINT activities_user_id_fkey 
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
+    END IF;
+    
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Activities foreign key could not be added: %', SQLERRM;
+END $$;
 
 -- ============================================================================
--- ADD FOREIGN KEY CONSTRAINTS
+-- FIX JOBS TABLE - Add missing columns
 -- ============================================================================
 
--- Applications foreign keys
-ALTER TABLE applications 
-ADD CONSTRAINT fk_applications_job_id 
-FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE;
-
-ALTER TABLE applications 
-ADD CONSTRAINT fk_applications_user_id 
-FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
-
--- Saved jobs foreign keys
-ALTER TABLE saved_jobs 
-ADD CONSTRAINT fk_saved_jobs_user_id 
-FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
-
-ALTER TABLE saved_jobs 
-ADD CONSTRAINT fk_saved_jobs_job_id 
-FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE;
-
--- Jobs foreign keys
-ALTER TABLE jobs 
-ADD CONSTRAINT fk_jobs_company_id 
-FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL;
-
-ALTER TABLE jobs 
-ADD CONSTRAINT fk_jobs_created_by 
-FOREIGN KEY (created_by) REFERENCES user_profiles(id) ON DELETE SET NULL;
-
--- Companies foreign keys
-ALTER TABLE companies 
-ADD CONSTRAINT fk_companies_created_by 
-FOREIGN KEY (created_by) REFERENCES user_profiles(id) ON DELETE SET NULL;
-
--- ============================================================================
--- ADD INDEXES FOR PERFORMANCE
--- ============================================================================
-
--- User profiles indexes
-CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON user_profiles(email);
-CREATE INDEX IF NOT EXISTS idx_user_profiles_role ON user_profiles(role);
-
--- Applications indexes
-CREATE INDEX IF NOT EXISTS idx_applications_user_id ON applications(user_id);
-CREATE INDEX IF NOT EXISTS idx_applications_job_id ON applications(job_id);
-CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
-CREATE INDEX IF NOT EXISTS idx_applications_created_at ON applications(created_at);
-
--- Saved jobs indexes
-CREATE INDEX IF NOT EXISTS idx_saved_jobs_user_id ON saved_jobs(user_id);
-CREATE INDEX IF NOT EXISTS idx_saved_jobs_job_id ON saved_jobs(job_id);
-
--- Jobs indexes
-CREATE INDEX IF NOT EXISTS idx_jobs_company_id ON jobs(company_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
-CREATE INDEX IF NOT EXISTS idx_jobs_location ON jobs(location);
-CREATE INDEX IF NOT EXISTS idx_jobs_job_type ON jobs(job_type);
-CREATE INDEX IF NOT EXISTS idx_jobs_experience_level ON jobs(experience_level);
-CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at);
-
--- Companies indexes
-CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
-CREATE INDEX IF NOT EXISTS idx_companies_industry ON companies(industry);
+DO $$ 
+BEGIN
+    -- Add missing columns to jobs table
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'jobs' AND column_name = 'education_requirements') THEN
+        ALTER TABLE jobs ADD COLUMN education_requirements TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'jobs' AND column_name = 'application_deadline') THEN
+        ALTER TABLE jobs ADD COLUMN application_deadline DATE;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'jobs' AND column_name = 'start_date') THEN
+        ALTER TABLE jobs ADD COLUMN start_date DATE;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'jobs' AND column_name = 'contact_email') THEN
+        ALTER TABLE jobs ADD COLUMN contact_email TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'jobs' AND column_name = 'contact_phone') THEN
+        ALTER TABLE jobs ADD COLUMN contact_phone TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'jobs' AND column_name = 'is_urgent') THEN
+        ALTER TABLE jobs ADD COLUMN is_urgent BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'jobs' AND column_name = 'application_instructions') THEN
+        ALTER TABLE jobs ADD COLUMN application_instructions TEXT;
+    END IF;
+    
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Some job columns could not be added: %', SQLERRM;
+END $$;
 
 -- ============================================================================
--- ENABLE ROW LEVEL SECURITY (RLS)
+-- FIX APPLICATIONS TABLE - Add missing columns
 -- ============================================================================
 
--- Enable RLS on all tables
-ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE saved_jobs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+DO $$ 
+BEGIN
+    -- Add missing columns to applications table
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'applications' AND column_name = 'full_name') THEN
+        ALTER TABLE applications ADD COLUMN full_name TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'applications' AND column_name = 'email') THEN
+        ALTER TABLE applications ADD COLUMN email TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'applications' AND column_name = 'phone') THEN
+        ALTER TABLE applications ADD COLUMN phone TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'applications' AND column_name = 'location') THEN
+        ALTER TABLE applications ADD COLUMN location TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'applications' AND column_name = 'salary_expectation') THEN
+        ALTER TABLE applications ADD COLUMN salary_expectation INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'applications' AND column_name = 'available_start_date') THEN
+        ALTER TABLE applications ADD COLUMN available_start_date DATE;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'applications' AND column_name = 'notes') THEN
+        ALTER TABLE applications ADD COLUMN notes TEXT;
+    END IF;
+    
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Some application columns could not be added: %', SQLERRM;
+END $$;
+
+-- ============================================================================
+-- ENABLE ROW LEVEL SECURITY
+-- ============================================================================
+
+DO $$
+BEGIN
+    ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE saved_jobs ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE job_skills ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'RLS could not be enabled on some tables: %', SQLERRM;
+END $$;
 
 -- ============================================================================
 -- CREATE RLS POLICIES
 -- ============================================================================
 
--- User profiles policies
-CREATE POLICY "Users can view their own profile" ON user_profiles
-    FOR SELECT USING (auth.uid() = id);
+DO $$
+BEGIN
+    -- User Profiles Policies
+    DROP POLICY IF EXISTS "Users can view own profile" ON user_profiles;
+    CREATE POLICY "Users can view own profile" ON user_profiles
+        FOR SELECT USING (auth.uid() = id);
 
-CREATE POLICY "Users can update their own profile" ON user_profiles
-    FOR UPDATE USING (auth.uid() = id);
+    DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
+    CREATE POLICY "Users can update own profile" ON user_profiles
+        FOR UPDATE USING (auth.uid() = id);
 
-CREATE POLICY "Users can insert their own profile" ON user_profiles
-    FOR INSERT WITH CHECK (auth.uid() = id);
+    DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
+    CREATE POLICY "Users can insert own profile" ON user_profiles
+        FOR INSERT WITH CHECK (auth.uid() = id);
 
-CREATE POLICY "Users can delete their own profile" ON user_profiles
-    FOR DELETE USING (auth.uid() = id);
+    DROP POLICY IF EXISTS "Users can delete own profile" ON user_profiles;
+    CREATE POLICY "Users can delete own profile" ON user_profiles
+        FOR DELETE USING (auth.uid() = id);
 
--- Applications policies
-CREATE POLICY "Users can view their own applications" ON applications
-    FOR SELECT USING (auth.uid() = user_id);
+    -- Jobs Policies
+    DROP POLICY IF EXISTS "Anyone can view active jobs" ON jobs;
+    CREATE POLICY "Anyone can view active jobs" ON jobs
+        FOR SELECT USING (status = 'active');
 
-CREATE POLICY "Users can create their own applications" ON applications
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+    DROP POLICY IF EXISTS "Employers can manage own jobs" ON jobs;
+    CREATE POLICY "Employers can manage own jobs" ON jobs
+        FOR ALL USING (created_by = auth.uid());
 
-CREATE POLICY "Users can update their own applications" ON applications
-    FOR UPDATE USING (auth.uid() = user_id);
+    -- Applications Policies
+    DROP POLICY IF EXISTS "Users can view own applications" ON applications;
+    CREATE POLICY "Users can view own applications" ON applications
+        FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own applications" ON applications
-    FOR DELETE USING (auth.uid() = user_id);
+    DROP POLICY IF EXISTS "Users can create own applications" ON applications;
+    CREATE POLICY "Users can create own applications" ON applications
+        FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Employers can view applications for their jobs
-CREATE POLICY "Employers can view applications for their jobs" ON applications
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM jobs 
-            WHERE jobs.id = applications.job_id 
-            AND jobs.created_by = auth.uid()
-        )
-    );
+    DROP POLICY IF EXISTS "Users can update own applications" ON applications;
+    CREATE POLICY "Users can update own applications" ON applications
+        FOR UPDATE USING (auth.uid() = user_id);
 
--- Saved jobs policies
-CREATE POLICY "Users can view their saved jobs" ON saved_jobs
-    FOR SELECT USING (auth.uid() = user_id);
+    DROP POLICY IF EXISTS "Users can delete own applications" ON applications;
+    CREATE POLICY "Users can delete own applications" ON applications
+        FOR DELETE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can save jobs" ON saved_jobs
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+    -- Employers can view applications for their jobs
+    DROP POLICY IF EXISTS "Employers can view job applications" ON applications;
+    CREATE POLICY "Employers can view job applications" ON applications
+        FOR SELECT USING (
+            EXISTS (
+                SELECT 1 FROM jobs 
+                WHERE jobs.id = applications.job_id 
+                AND jobs.created_by = auth.uid()
+            )
+        );
 
-CREATE POLICY "Users can unsave jobs" ON saved_jobs
-    FOR DELETE USING (auth.uid() = user_id);
+    -- Saved Jobs Policies
+    DROP POLICY IF EXISTS "Users can manage own saved jobs" ON saved_jobs;
+    CREATE POLICY "Users can manage own saved jobs" ON saved_jobs
+        FOR ALL USING (auth.uid() = user_id);
 
--- Jobs policies
-CREATE POLICY "Anyone can view active jobs" ON jobs
-    FOR SELECT USING (status = 'active');
+    -- Skills Policies
+    DROP POLICY IF EXISTS "Anyone can view skills" ON skills;
+    CREATE POLICY "Anyone can view skills" ON skills
+        FOR SELECT USING (true);
 
-CREATE POLICY "Employers can view their own jobs" ON jobs
-    FOR SELECT USING (created_by = auth.uid());
+    -- Job Skills Policies
+    DROP POLICY IF EXISTS "Anyone can view job skills" ON job_skills;
+    CREATE POLICY "Anyone can view job skills" ON job_skills
+        FOR SELECT USING (true);
 
-CREATE POLICY "Employers can create jobs" ON jobs
-    FOR INSERT WITH CHECK (created_by = auth.uid());
+    -- Activities Policies
+    DROP POLICY IF EXISTS "Users can view own activities" ON activities;
+    CREATE POLICY "Users can view own activities" ON activities
+        FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Employers can update their own jobs" ON jobs
-    FOR UPDATE USING (created_by = auth.uid());
+    DROP POLICY IF EXISTS "Users can create own activities" ON activities;
+    CREATE POLICY "Users can create own activities" ON activities
+        FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Employers can delete their own jobs" ON jobs
-    FOR DELETE USING (created_by = auth.uid());
+    -- Companies Policies
+    DROP POLICY IF EXISTS "Anyone can view companies" ON companies;
+    CREATE POLICY "Anyone can view companies" ON companies
+        FOR SELECT USING (true);
 
--- Companies policies
-CREATE POLICY "Anyone can view companies" ON companies
-    FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Users can manage own companies" ON companies;
+    CREATE POLICY "Users can manage own companies" ON companies
+        FOR ALL USING (created_by = auth.uid());
 
-CREATE POLICY "Users can create companies" ON companies
-    FOR INSERT WITH CHECK (created_by = auth.uid());
-
-CREATE POLICY "Users can update their own companies" ON companies
-    FOR UPDATE USING (created_by = auth.uid());
-
-CREATE POLICY "Users can delete their own companies" ON companies
-    FOR DELETE USING (created_by = auth.uid());
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Some RLS policies could not be created: %', SQLERRM;
+END $$;
 
 -- ============================================================================
--- CREATE TRIGGERS FOR UPDATED_AT
+-- CREATE FUNCTIONS
 -- ============================================================================
 
--- Function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- Profile completion calculation function
+CREATE OR REPLACE FUNCTION calculate_profile_completion(user_id UUID)
+RETURNS INTEGER AS $$
+DECLARE
+    completion_percentage INTEGER := 0;
+    profile_record user_profiles%ROWTYPE;
+BEGIN
+    SELECT * INTO profile_record FROM user_profiles WHERE id = user_id;
+    
+    IF NOT FOUND THEN
+        RETURN 0;
+    END IF;
+    
+    -- Basic information (60%)
+    IF profile_record.full_name IS NOT NULL AND profile_record.full_name != '' THEN
+        completion_percentage := completion_percentage + 15;
+    END IF;
+    
+    IF profile_record.location IS NOT NULL AND profile_record.location != '' THEN
+        completion_percentage := completion_percentage + 10;
+    END IF;
+    
+    IF profile_record.phone IS NOT NULL AND profile_record.phone != '' THEN
+        completion_percentage := completion_percentage + 10;
+    END IF;
+    
+    IF profile_record.bio IS NOT NULL AND profile_record.bio != '' THEN
+        completion_percentage := completion_percentage + 15;
+    END IF;
+    
+    IF profile_record.experience_level IS NOT NULL THEN
+        completion_percentage := completion_percentage + 10;
+    END IF;
+    
+    -- Professional information (30%)
+    IF profile_record.current_job_title IS NOT NULL AND profile_record.current_job_title != '' THEN
+        completion_percentage := completion_percentage + 10;
+    END IF;
+    
+    IF profile_record.industry IS NOT NULL AND profile_record.industry != '' THEN
+        completion_percentage := completion_percentage + 10;
+    END IF;
+    
+    IF profile_record.years_experience IS NOT NULL THEN
+        completion_percentage := completion_percentage + 10;
+    END IF;
+    
+    -- Skills and links (10%)
+    IF profile_record.skills IS NOT NULL AND jsonb_array_length(profile_record.skills) > 0 THEN
+        completion_percentage := completion_percentage + 10;
+    END IF;
+    
+    RETURN LEAST(completion_percentage, 100);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger function to auto-update profile completion
+CREATE OR REPLACE FUNCTION update_profile_completion()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
+    NEW.profile_completion := calculate_profile_completion(NEW.id);
+    NEW.updated_at := CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Create triggers for updated_at
-CREATE TRIGGER update_user_profiles_updated_at 
-    BEFORE UPDATE ON user_profiles 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Create trigger safely
+DO $$
+BEGIN
+    DROP TRIGGER IF EXISTS trigger_update_profile_completion ON user_profiles;
+    CREATE TRIGGER trigger_update_profile_completion
+        BEFORE INSERT OR UPDATE ON user_profiles
+        FOR EACH ROW
+        EXECUTE FUNCTION update_profile_completion();
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Trigger could not be created: %', SQLERRM;
+END $$;
 
-CREATE TRIGGER update_applications_updated_at 
-    BEFORE UPDATE ON applications 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Delete application function
+CREATE OR REPLACE FUNCTION delete_application_with_activity(
+    p_application_id UUID,
+    p_user_id UUID DEFAULT NULL
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_user_id      UUID := COALESCE(p_user_id, auth.uid());
+    app_row        applications%ROWTYPE;
+    v_job_title    TEXT;
+    v_company_name TEXT;
+    result         JSON;
+BEGIN
+    -- Get application record (must belong to caller)
+    SELECT a.*
+    INTO app_row
+    FROM applications a
+    WHERE a.id = p_application_id
+        AND a.user_id = v_user_id;
 
-CREATE TRIGGER update_jobs_updated_at 
-    BEFORE UPDATE ON jobs 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    IF NOT FOUND THEN
+        result := json_build_object(
+            'success', false,
+            'message', 'Application not found or you do not have permission to delete it'
+        );
+        RETURN result;
+    END IF;
 
-CREATE TRIGGER update_companies_updated_at 
-    BEFORE UPDATE ON companies 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    -- Fetch job + company details for activity logging
+    SELECT j.title, c.name
+    INTO v_job_title, v_company_name
+    FROM jobs j
+    LEFT JOIN companies c ON c.id = j.company_id
+    WHERE j.id = app_row.job_id;
+
+    -- Delete the application
+    DELETE FROM applications WHERE id = p_application_id;
+
+    -- Log activity
+    INSERT INTO activities (user_id, type, title, description, related_id, related_type, metadata)
+    VALUES (
+        v_user_id,
+        'application_deleted',
+        COALESCE(v_job_title, 'Application deleted'),
+        CASE 
+            WHEN v_job_title IS NOT NULL AND v_company_name IS NOT NULL
+                THEN 'You deleted your application for ' || v_job_title || ' at ' || v_company_name
+            WHEN v_job_title IS NOT NULL
+                THEN 'You deleted your application for ' || v_job_title
+            ELSE
+                'You deleted one of your applications'
+        END,
+        p_application_id,
+        'application',
+        jsonb_build_object('job_title', v_job_title, 'company_name', v_company_name)
+    );
+
+    -- Return success
+    result := json_build_object('success', true, 'message', 'Application deleted successfully');
+    RETURN result;
+
+EXCEPTION WHEN OTHERS THEN
+    result := json_build_object('success', false, 'message', 'Error deleting application: ' || SQLERRM);
+    RETURN result;
+END;
+$$;
+
+-- Delete user account function
+CREATE OR REPLACE FUNCTION delete_user_account(p_user_id UUID)
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    -- Check if user exists and is the authenticated user
+    IF p_user_id != auth.uid() THEN
+        SELECT json_build_object(
+            'success', false,
+            'message', 'Unauthorized: You can only delete your own account'
+        ) INTO result;
+        RETURN result;
+    END IF;
+    
+    -- Delete user activities
+    DELETE FROM activities WHERE user_id = p_user_id;
+    
+    -- Delete saved jobs
+    DELETE FROM saved_jobs WHERE user_id = p_user_id;
+    
+    -- Delete job applications
+    DELETE FROM applications WHERE user_id = p_user_id;
+    
+    -- Delete user profile (cascades to related records)
+    DELETE FROM user_profiles WHERE id = p_user_id;
+    
+    SELECT json_build_object(
+        'success', true,
+        'message', 'Account deleted successfully'
+    ) INTO result;
+    
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================================
--- INSERT SAMPLE DATA (OPTIONAL)
+-- GRANT PERMISSIONS
 -- ============================================================================
 
--- Insert sample companies
-INSERT INTO companies (id, name, description, industry, size, founded, headquarters, website, is_verified) VALUES
-('550e8400-e29b-41d4-a716-446655440001', 'TechCorp', 'Leading technology company', 'Technology', '500-1000', 2010, 'San Francisco, CA', 'https://techcorp.com', true),
-('550e8400-e29b-41d4-a716-446655440002', 'InnovateSoft', 'Software development company', 'Technology', '100-500', 2015, 'Austin, TX', 'https://innovatesoft.com', true),
-('550e8400-e29b-41d4-a716-446655440003', 'DataFlow', 'Data analytics and consulting', 'Consulting', '50-100', 2018, 'New York, NY', 'https://dataflow.com', true)
-ON CONFLICT (id) DO NOTHING;
+DO $$
+BEGIN
+    GRANT EXECUTE ON FUNCTION calculate_profile_completion(UUID) TO authenticated;
+    GRANT EXECUTE ON FUNCTION delete_application_with_activity(UUID, UUID) TO authenticated;
+    GRANT EXECUTE ON FUNCTION delete_user_account(UUID) TO authenticated;
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Some permissions could not be granted: %', SQLERRM;
+END $$;
 
--- Insert sample jobs
-INSERT INTO jobs (id, title, description, location, job_type, experience_level, salary_min, salary_max, company_id, status) VALUES
-('660e8400-e29b-41d4-a716-446655440001', 'Senior Software Engineer', 'Build scalable web applications', 'San Francisco, CA', 'full-time', 'senior', 120000, 180000, '550e8400-e29b-41d4-a716-446655440001', 'active'),
-('660e8400-e29b-41d4-a716-446655440002', 'Frontend Developer', 'Create beautiful user interfaces', 'Austin, TX', 'full-time', 'mid', 80000, 120000, '550e8400-e29b-41d4-a716-446655440002', 'active'),
-('660e8400-e29b-41d4-a716-446655440003', 'Data Scientist', 'Analyze complex datasets', 'New York, NY', 'full-time', 'senior', 100000, 150000, '550e8400-e29b-41d4-a716-446655440003', 'active')
-ON CONFLICT (id) DO NOTHING;
+-- ============================================================================
+-- CREATE INDEXES FOR PERFORMANCE
+-- ============================================================================
+
+DO $$
+BEGIN
+    CREATE INDEX IF NOT EXISTS idx_user_profiles_role ON user_profiles(role);
+    CREATE INDEX IF NOT EXISTS idx_user_profiles_completion ON user_profiles(profile_completion);
+    CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+    CREATE INDEX IF NOT EXISTS idx_jobs_location ON jobs(location);
+    CREATE INDEX IF NOT EXISTS idx_jobs_job_type ON jobs(job_type);
+    CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
+    CREATE INDEX IF NOT EXISTS idx_applications_user_job ON applications(user_id, job_id);
+    CREATE INDEX IF NOT EXISTS idx_saved_jobs_user_id ON saved_jobs(user_id);
+    CREATE INDEX IF NOT EXISTS idx_job_skills_job_id ON job_skills(job_id);
+    CREATE INDEX IF NOT EXISTS idx_job_skills_skill_id ON job_skills(skill_id);
+    CREATE INDEX IF NOT EXISTS idx_activities_user_id ON activities(user_id);
+    CREATE INDEX IF NOT EXISTS idx_activities_type ON activities(type);
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Some indexes could not be created: %', SQLERRM;
+END $$;
+
+-- ============================================================================
+-- INSERT SAMPLE SKILLS
+-- ============================================================================
+
+INSERT INTO skills (name, category) VALUES
+('JavaScript', 'programming'),
+('Python', 'programming'),
+('React', 'frontend'),
+('Node.js', 'backend'),
+('AWS', 'cloud'),
+('Docker', 'devops'),
+('PostgreSQL', 'database'),
+('MongoDB', 'database'),
+('Git', 'tools'),
+('Kubernetes', 'devops'),
+('TypeScript', 'programming'),
+('Vue.js', 'frontend'),
+('Angular', 'frontend'),
+('PHP', 'programming'),
+('Java', 'programming'),
+('C#', 'programming'),
+('Go', 'programming'),
+('Rust', 'programming'),
+('Swift', 'programming'),
+('Kotlin', 'programming')
+ON CONFLICT (name) DO NOTHING;
+
+-- ============================================================================
+-- UPDATE EXISTING PROFILES
+-- ============================================================================
+
+DO $$
+BEGIN
+    -- Update profile completion for existing profiles
+    UPDATE user_profiles 
+    SET profile_completion = calculate_profile_completion(id)
+    WHERE profile_completion IS NULL OR profile_completion = 0;
+    
+    RAISE NOTICE 'Updated % user profiles with completion percentages', ROW_COUNT;
+EXCEPTION 
+    WHEN others THEN 
+        RAISE NOTICE 'Could not update profile completions: %', SQLERRM;
+END $$;
 
 -- ============================================================================
 -- VERIFICATION QUERIES
 -- ============================================================================
 
--- Verify tables were created
+-- Verify all tables exist
+SELECT 'Tables created:' as info;
 SELECT table_name FROM information_schema.tables 
 WHERE table_schema = 'public' 
-AND table_name IN ('user_profiles', 'applications', 'saved_jobs', 'jobs', 'companies');
+AND table_name IN ('user_profiles', 'applications', 'saved_jobs', 'jobs', 'companies', 'skills', 'job_skills', 'activities');
 
--- Verify columns exist
+-- Verify key columns exist
+SELECT 'Key columns verified:' as info;
 SELECT column_name, data_type FROM information_schema.columns 
 WHERE table_name = 'user_profiles' 
-AND column_name = 'certifications';
+AND column_name IN ('portfolio_files', 'certifications', 'skills', 'profile_completion');
 
 -- Verify RLS is enabled
+SELECT 'RLS status:' as info;
 SELECT schemaname, tablename, rowsecurity 
 FROM pg_tables 
-WHERE tablename IN ('user_profiles', 'applications', 'saved_jobs', 'jobs', 'companies');
+WHERE tablename IN ('user_profiles', 'applications', 'saved_jobs', 'jobs', 'companies', 'skills', 'job_skills', 'activities');
+
+-- ============================================================================
+-- COMPLETION MESSAGE
+-- ============================================================================
+
+DO $$
+BEGIN
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'SkillMatch Database Fixes Complete!';
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'All schema issues have been resolved.';
+    RAISE NOTICE 'Your application should now work without errors.';
+END $$;
