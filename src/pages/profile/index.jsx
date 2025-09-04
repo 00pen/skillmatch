@@ -323,17 +323,17 @@ const Profile = () => {
       if (finalConfirm === 'DELETE') {
         setIsLoading(true);
         try {
-          const { error } = await deleteAccount();
+          const { data, error } = await deleteAccount();
           if (error) {
             console.error('Account deletion error:', error);
-            alert('Failed to delete account. Please try again or contact support.');
+            alert(`Failed to delete account: ${error.message || 'Please try again or contact support.'}`);
           } else {
-            alert('Your account has been permanently deleted.');
+            alert(data?.message || 'Your account has been permanently deleted.');
             navigate('/');
           }
         } catch (error) {
           console.error('Account deletion error:', error);
-          alert('Failed to delete account. Please try again or contact support.');
+          alert(`Failed to delete account: ${error.message || 'Please try again or contact support.'}`);
         } finally {
           setIsLoading(false);
         }

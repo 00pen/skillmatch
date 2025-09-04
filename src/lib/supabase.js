@@ -207,30 +207,58 @@ export const db = {
 
   deleteUserAccount: async (userId) => {
     try {
-      // Manual cleanup - delete all user data
-      const deletions = [
-        supabase.from('saved_jobs').delete().eq('user_id', userId),
-        supabase.from('applications').delete().eq('user_id', userId),
-        supabase.from('user_profiles').delete().eq('id', userId)
-      ];
+      // First try to use the database function
+      const { data, error } = await supabase.rpc('delete_user_account', {
+        p_user_id: userId
+      });
       
-      // Execute all deletions
-      const results = await Promise.allSettled(deletions);
-      const errors = results.filter(r => r.status === 'rejected').map(r => r.reason);
-      
-      if (errors.length > 0) {
-        console.error('Some deletions failed:', errors);
-        return { error: errors[0] };
+      if (error) {
+        // If the function doesn't exist or fails, fall back to manual deletion
+        console.warn('Database function failed, falling back to manual deletion:', error);
+        
+        // Manual cleanup - delete all user data
+        const deletions = [
+          supabase.from('saved_jobs').delete().eq('user_id', userId),
+          supabase.from('applications').delete().eq('user_id', userId),
+          supabase.from('messages').delete().or(`sender_id.eq.${userId},recipient_id.eq.${userId}`),
+          supabase.from('conversations').delete().or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`),
+          supabase.from('user_profiles').delete().eq('id', userId)
+        ];
+        
+        // Execute all deletions
+        const results = await Promise.allSettled(deletions);
+        const errors = results.filter(r => r.status === 'rejected').map(r => r.reason);
+        
+        if (errors.length > 0) {
+          console.error('Some deletions failed:', errors);
+          return { error: errors[0] };
+        }
+        
+        // Sign out the user after successful deletion
+        await supabase.auth.signOut();
+        return { 
+          data: { 
+            success: true, 
+            message: 'Account data deleted successfully. You have been signed out.' 
+          }, 
+          error: null 
+        };
       }
       
-      // Finally, delete the auth user
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) {
-        console.error('Auth user deletion failed:', authError);
-        return { error: authError };
+      // Check if the database function returned success
+      if (data && data.success) {
+        // Sign out the user after successful deletion
+        await supabase.auth.signOut();
+        return { 
+          data: { 
+            success: true, 
+            message: data.message || 'Account data deleted successfully. You have been signed out.' 
+          }, 
+          error: null 
+        };
+      } else {
+        return { error: new Error(data?.message || 'Account deletion failed') };
       }
-      
-      return { data: { success: true }, error: null };
     } catch (err) {
       console.error('Account deletion failed:', err);
       return { error: err };

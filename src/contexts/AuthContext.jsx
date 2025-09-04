@@ -233,18 +233,18 @@ export const AuthProvider = ({ children }) => {
       if (!user) throw new Error('No authenticated user');
       
       // Use the proper account deletion function from Supabase
-      const { error: deletionError } = await db.deleteUserAccount(user.id);
+      const { data, error: deletionError } = await db.deleteUserAccount(user.id);
       if (deletionError) throw deletionError;
       
       // Clear local state
       setUser(null);
       setUserProfile(null);
       
-      return { error: null };
+      return { data, error: null };
     } catch (error) {
       console.error('Account deletion error:', error);
       // Don't clear state if deletion fails - user should retry
-      return { error };
+      return { data: null, error };
     } finally {
       setIsLoading(false);
     }
