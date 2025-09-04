@@ -17,6 +17,19 @@ const ApplicationModal = ({ isOpen, onClose, job, onSubmit }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Disable body scroll when modal is open - hook must be called unconditionally
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleInputChange = (field, value) => {
@@ -123,19 +136,6 @@ const ApplicationModal = ({ isOpen, onClose, job, onSubmit }) => {
       onClose();
     }
   };
-
-  // Disable body scroll when modal is open
-  React.useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
 
   return (
     <div 
