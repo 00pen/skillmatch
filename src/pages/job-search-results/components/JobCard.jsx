@@ -9,7 +9,9 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
   const [isLoading, setIsLoading] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
 
-  const handleViewDetails = () => {
+  const handleViewDetails = (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     navigate(`/job-details/${job?.id}`);
   };
 
@@ -58,7 +60,7 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 sm:p-6 hover:shadow-card transition-shadow duration-150 cursor-pointer group">
+    <div className="bg-card border border-border rounded-lg p-4 sm:p-6 hover:shadow-card transition-shadow duration-150 group">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-3 sm:space-y-0">
         <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
@@ -70,12 +72,12 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 
-              className="text-base sm:text-lg font-semibold text-text-primary mb-1 group-hover:text-secondary transition-colors duration-150 cursor-pointer line-clamp-2"
+            <button 
+              className="text-base sm:text-lg font-semibold text-text-primary mb-1 group-hover:text-secondary transition-colors duration-150 cursor-pointer line-clamp-2 text-left w-full"
               onClick={handleViewDetails}
             >
               {job?.title}
-            </h3>
+            </button>
             <p className="text-sm sm:text-base text-text-secondary font-medium mb-2">{job?.company?.name}</p>
             
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-text-secondary mb-3">
