@@ -116,24 +116,50 @@ export const db = {
       return await mockAuth.updateUserProfile(userId, updates);
     }
     
-    // Filter out fields that might not exist in the database yet
+    // Comprehensive list of allowed fields for user profiles
     const allowedFields = [
       'full_name', 'role', 'location', 'current_job_title', 'company_name', 
       'industry', 'bio', 'website_url', 'linkedin_url', 'github_url', 
-      'portfolio_url', 'phone', 'profile_completion_percentage'
+      'portfolio_url', 'phone', 'date_of_birth', 'gender', 'nationality',
+      'years_experience', 'expected_salary_min', 'expected_salary_max',
+      'salary_currency', 'employment_type_preferences', 'remote_work_preference',
+      'availability', 'notice_period', 'skills', 'languages', 'certifications',
+      'education', 'work_experience', 'resume_url', 'cover_letter_url',
+      'profile_image_url', 'experience_level'
     ];
     
     const filteredUpdates = Object.fromEntries(
       Object.entries(updates).filter(([key]) => allowedFields.includes(key))
     );
     
-    const { data, error } = await supabase
+    // Ensure updated_at is set
+    filteredUpdates.updated_at = new Date().toISOString();
+    
+    // First, check if profile exists, if not create it
+    const { data: existingProfile } = await supabase
       .from('user_profiles')
-      .update(filteredUpdates)
-      .eq('user_id', userId)
-      .select()
+      .select('id')
+      .eq('id', userId)
       .single();
-    return { data, error };
+    
+    if (!existingProfile) {
+      // Create profile if it doesn't exist
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert([{ id: userId, ...filteredUpdates }])
+        .select()
+        .single();
+      return { data, error };
+    } else {
+      // Update existing profile
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update(filteredUpdates)
+        .eq('id', userId)
+        .select()
+        .single();
+      return { data, error };
+    }
   },
 
   deleteUserAccount: async (userId) => {
@@ -141,12 +167,27 @@ export const db = {
       return await mockAuth.deleteUserAccount(userId);
     }
     
-    // This will cascade and delete related records
-    const { error } = await supabase
-      .from('user_profiles')
-      .delete()
-      .eq('user_id', userId);
-    return { error };
+    try {
+      // Use the database function for proper account deletion
+      const { data, error } = await supabase.rpc('delete_user_account', {
+        p_user_id: userId
+      });
+      
+      if (error) {
+        console.error('Database deletion error:', error);
+        // Fallback to direct deletion if function doesn't exist
+        const { error: deleteError } = await supabase
+          .from('user_profiles')
+          .delete()
+          .eq('id', userId);
+        return { error: deleteError };
+      }
+      
+      return { data, error: null };
+    } catch (err) {
+      console.error('Account deletion failed:', err);
+      return { error: err };
+    }
   },
 
   // Jobs
@@ -348,24 +389,71 @@ export const db = {
 
   // Applications
   createApplication: async (applicationData) => {
-    const { data, error } = await supabase
-      .from('applications')
-      .insert([applicationData])
-      .select(`
-        *,
-        jobs (
-          id,
-          title,
-          location,
-          job_type,
-          companies (
-            name,
-            logo_url
-          )
-        )
-      `)
-      .single();
-    return { data, error };
+    if (USE_MOCK_AUTH || !supabase) {
+      // Mock application for development
+      return {
+        data: {
+          id: `mock-app-${Date.now()}`,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          ...applicationData
+        },
+        error: null
+      };
+    }
+    
+    try {
+      // Use the enhanced application function if available
+      const { data, error } = await supabase.rpc('submit_job_application', {
+        p_job_id: applicationData.job_id,
+        p_user_id: applicationData.user_id,
+        p_full_name: applicationData.full_name,
+        p_email: applicationData.email,
+        p_phone: applicationData.phone,
+        p_location: applicationData.location,
+        p_cover_letter: applicationData.cover_letter,
+        p_resume_url: applicationData.resume_url,
+        p_portfolio_url: applicationData.portfolio_url,
+        p_salary_expectation: applicationData.salary_expectation,
+        p_available_start_date: applicationData.available_start_date,
+        p_notes: applicationData.notes
+      });
+      
+      if (error) {
+        console.error('Application function error:', error);
+        // Fallback to direct insert
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('applications')
+          .insert([{
+            id: crypto.randomUUID(),
+            ...applicationData,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select(`
+            *,
+            jobs (
+              id,
+              title,
+              location,
+              job_type,
+              companies (
+                name,
+                logo_url
+              )
+            )
+          `)
+          .single();
+        
+        return { data: fallbackData, error: fallbackError };
+      }
+      
+      return { data: data.success ? { id: data.application_id, status: 'pending', ...applicationData } : null, error: data.success ? null : { message: data.message } };
+    } catch (err) {
+      console.error('Application submission error:', err);
+      return { data: null, error: err };
+    }
   },
 
   getUserApplications: async (userId) => {
@@ -524,8 +612,78 @@ export const db = {
     return { data: !!data, error };
   },
 
+  // File Upload functionality
+  uploadFile: async (file, bucket, filePath) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      // Mock file upload for development
+      return {
+        data: { path: `/mock-uploads/${bucket}/${filePath}` },
+        error: null
+      };
+    }
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (error) throw error;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+      
+      return { data: { ...data, publicUrl }, error: null };
+    } catch (err) {
+      console.error('File upload error:', err);
+      return { data: null, error: err };
+    }
+  },
+
+  deleteFile: async (bucket, filePath) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return { error: null };
+    }
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .remove([filePath]);
+      
+      return { data, error };
+    } catch (err) {
+      console.error('File deletion error:', err);
+      return { data: null, error: err };
+    }
+  },
+
+  getFileUrl: async (bucket, filePath) => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return { data: { publicUrl: `/mock-uploads/${bucket}/${filePath}` }, error: null };
+    }
+    
+    try {
+      const { data } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+      
+      return { data, error: null };
+    } catch (err) {
+      console.error('Get file URL error:', err);
+      return { data: null, error: err };
+    }
+  },
+
   // Skills
   getSkills: async () => {
+    if (USE_MOCK_AUTH || !supabase) {
+      return { data: [], error: null };
+    }
+    
     const { data, error } = await supabase
       .from('skills')
       .select('*')

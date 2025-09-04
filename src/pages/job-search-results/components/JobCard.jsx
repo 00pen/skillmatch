@@ -60,7 +60,10 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 sm:p-6 hover:shadow-card transition-shadow duration-150 group">
+    <div 
+      className="bg-card border border-border rounded-lg p-4 sm:p-6 hover:shadow-card transition-shadow duration-150 group cursor-pointer"
+      onClick={handleViewDetails}
+    >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-3 sm:space-y-0">
         <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
@@ -72,12 +75,9 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
           </div>
           
           <div className="flex-1 min-w-0">
-            <button 
-              className="text-base sm:text-lg font-semibold text-text-primary mb-1 group-hover:text-secondary transition-colors duration-150 cursor-pointer line-clamp-2 text-left w-full"
-              onClick={handleViewDetails}
-            >
+            <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-1 group-hover:text-secondary transition-colors duration-150 line-clamp-2">
               {job?.title}
-            </button>
+            </h3>
             <p className="text-sm sm:text-base text-text-secondary font-medium mb-2">{job?.company?.name}</p>
             
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-text-secondary mb-3">
@@ -106,24 +106,27 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
           </div>
         </div>
         
-        {/* Mobile actions - show on mobile only */}
+        {/* Mobile salary display - show on mobile only */}
         <div className="flex sm:hidden items-center justify-between mt-2">
-          <div className="text-sm sm:text-lg font-semibold text-text-primary">
+          <div className="text-sm font-semibold text-text-primary truncate flex-1 mr-2">
             {formatSalary(job?.salary?.min, job?.salary?.max)}
           </div>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 flex-shrink-0">
             {userRole === 'job-seeker' && (
               <Button
                 variant="ghost"
-                size="icon"
-                onClick={handleSaveJob}
+                size="xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveJob(e);
+                }}
                 loading={isLoading}
-                className="text-text-secondary hover:text-secondary p-1 w-8 h-8"
+                className="text-text-secondary hover:text-secondary p-1.5 min-w-[32px] h-8"
                 title={isSaved ? "Remove from saved jobs" : "Save job"}
               >
                 <Icon 
                   name={isSaved ? "Heart" : "Heart"} 
-                  size={16}
+                  size={14}
                   className={isSaved ? "fill-current text-secondary" : ""}
                 />
               </Button>
@@ -160,7 +163,10 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={handleQuickApply}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuickApply(e);
+                  }}
                   loading={isApplying}
                   iconName="Send"
                   iconSize={14}
@@ -213,27 +219,33 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
             <Button
               variant="secondary"
               size="sm"
-              onClick={handleQuickApply}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleQuickApply(e);
+              }}
               loading={isApplying}
               iconName="Send"
-              iconSize={14}
+              iconSize={12}
               iconPosition="left"
-              className="flex-1 text-xs"
+              className="flex-1 text-xs px-3 py-2 h-8 min-h-[2rem] whitespace-nowrap overflow-hidden"
             >
-              {isApplying ? 'Applying...' : 'Quick Apply'}
+              {isApplying ? 'Applying...' : 'Apply'}
             </Button>
           )}
           
           <Button
             variant="outline"
             size="sm"
-            onClick={handleViewDetails}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetails(e);
+            }}
             iconName="ExternalLink"
-            iconSize={14}
+            iconSize={12}
             iconPosition="right"
-            className="flex-1 text-xs"
+            className="flex-1 text-xs px-3 py-2 h-8 min-h-[2rem] whitespace-nowrap overflow-hidden"
           >
-            View Details
+            Details
           </Button>
         </div>
       </div>
