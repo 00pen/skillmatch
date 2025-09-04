@@ -275,7 +275,28 @@ const Profile = () => {
     setSuccessMessage('');
     
     try {
-      const { error } = await updateProfile(formData);
+      // Clean up form data before sending to database
+      const cleanedFormData = { ...formData };
+      
+      // Convert empty strings to null for integer fields
+      const integerFields = ['years_experience', 'expected_salary_min', 'expected_salary_max'];
+      integerFields.forEach(field => {
+        if (cleanedFormData[field] === '' || cleanedFormData[field] === undefined) {
+          cleanedFormData[field] = null;
+        } else if (typeof cleanedFormData[field] === 'string') {
+          cleanedFormData[field] = parseInt(cleanedFormData[field]) || null;
+        }
+      });
+      
+      // Convert empty strings to null for text fields
+      const textFields = ['full_name', 'location', 'phone', 'bio', 'current_job_title', 'company_name', 'industry'];
+      textFields.forEach(field => {
+        if (cleanedFormData[field] === '') {
+          cleanedFormData[field] = null;
+        }
+      });
+      
+      const { error } = await updateProfile(cleanedFormData);
       
       if (error) {
         setErrors({ submit: error.message });

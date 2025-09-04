@@ -83,6 +83,17 @@ export const db = {
         updated_at: new Date().toISOString()
       };
       
+      // Handle integer fields - convert empty strings to null
+      if (updates.years_experience !== undefined) {
+        profileUpdates.years_experience = updates.years_experience === '' ? null : parseInt(updates.years_experience) || null;
+      }
+      if (updates.expected_salary_min !== undefined) {
+        profileUpdates.expected_salary_min = updates.expected_salary_min === '' ? null : parseInt(updates.expected_salary_min) || null;
+      }
+      if (updates.expected_salary_max !== undefined) {
+        profileUpdates.expected_salary_max = updates.expected_salary_max === '' ? null : parseInt(updates.expected_salary_max) || null;
+      }
+      
       // Ensure JSONB fields have proper format
       if (updates.certifications !== undefined) {
         profileUpdates.certifications = Array.isArray(updates.certifications) 
@@ -104,9 +115,9 @@ export const db = {
           ? updates.skills 
           : [];
       }
-      if (updates.languages !== undefined) {
-        profileUpdates.languages = Array.isArray(updates.languages) 
-          ? updates.languages 
+      if (updates.portfolio_files !== undefined) {
+        profileUpdates.portfolio_files = Array.isArray(updates.portfolio_files) 
+          ? updates.portfolio_files 
           : [];
       }
       if (updates.employment_type_preferences !== undefined) {
@@ -114,7 +125,20 @@ export const db = {
           ? updates.employment_type_preferences 
           : [];
       }
-    
+      if (updates.languages !== undefined) {
+        profileUpdates.languages = Array.isArray(updates.languages) 
+          ? updates.languages 
+          : [];
+      }
+      
+      // Handle text fields - convert empty strings to null
+      const textFields = ['full_name', 'location', 'phone', 'bio', 'current_job_title', 'company_name', 'industry'];
+      textFields.forEach(field => {
+        if (updates[field] !== undefined) {
+          profileUpdates[field] = updates[field] === '' ? null : updates[field];
+        }
+      });
+      
       // First, check if profile exists, if not create it
       const { data: existingProfile } = await supabase
         .from('user_profiles')
