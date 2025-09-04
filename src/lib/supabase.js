@@ -1,38 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
-import { mockAuth } from './database.js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Check if we have real Supabase credentials
-const USE_MOCK_AUTH = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-project') || supabaseUrl.includes('localhost');
-const USE_LOCAL_DB = USE_MOCK_AUTH; // Use local DB only when we don't have real Supabase
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase credentials. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.');
+}
 
 console.log('Supabase Configuration:', {
   hasUrl: !!supabaseUrl,
   hasKey: !!supabaseAnonKey,
-  useMockAuth: USE_MOCK_AUTH,
-  url: supabaseUrl?.substring(0, 20) + '...' || 'not set'
+  url: supabaseUrl?.substring(0, 20) + '...'
 });
 
-let supabase = null;
-if (!USE_MOCK_AUTH) {
-  try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
-  } catch (error) {
-    console.warn('Failed to create Supabase client, falling back to mock auth:', error);
-  }
-}
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export { supabase };
 
-// Auth helpers - with fallback to mock auth for development
+// Auth helpers - Supabase only, no mock fallbacks
 export const auth = {
   signUp: async (email, password, userData = {}) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return await mockAuth.signUp(email, password, userData);
-    }
-    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -44,10 +31,6 @@ export const auth = {
   },
 
   signIn: async (email, password) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return await mockAuth.signIn(email, password);
-    }
-    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -56,39 +39,24 @@ export const auth = {
   },
 
   signOut: async () => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return await mockAuth.signOut();
-    }
-    
     const { error } = await supabase.auth.signOut();
     return { error };
   },
 
   getCurrentUser: async () => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return await mockAuth.getCurrentUser();
-    }
-    
     const { data: { user }, error } = await supabase.auth.getUser();
     return { user, error };
   },
 
   onAuthStateChange: (callback) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return mockAuth.onAuthStateChange(callback);
-    }
-    
     return supabase.auth.onAuthStateChange(callback);
   }
 };
 
-// Database helpers - with fallback to mock for development
+// Database helpers - Supabase only, no mock fallbacks
 export const db = {
   // Users
   createUserProfile: async (userId, profileData) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return await mockAuth.createUserProfile(userId, profileData);
-    }
     
     const { data, error } = await supabase
       .from('user_profiles')
@@ -99,9 +67,6 @@ export const db = {
   },
 
   getUserProfile: async (userId) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return await mockAuth.getUserProfile(userId);
-    }
     
     const { data, error } = await supabase
       .from('user_profiles')
@@ -112,41 +77,27 @@ export const db = {
   },
 
   updateUserProfile: async (userId, updates) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return await mockAuth.updateUserProfile(userId, updates);
-    }
     
-    // Comprehensive list of allowed fields for user profiles
-    const allowedFields = [
-      'full_name', 'role', 'location', 'current_job_title', 'company_name', 
-      'industry', 'bio', 'website_url', 'linkedin_url', 'github_url', 
-      'portfolio_url', 'phone', 'date_of_birth', 'gender', 'nationality',
-      'years_experience', 'expected_salary_min', 'expected_salary_max',
-      'salary_currency', 'employment_type_preferences', 'remote_work_preference',
-      'availability', 'notice_period', 'skills', 'languages', 'certifications',
-      'education', 'work_experience', 'resume_url', 'cover_letter_url',
-      'profile_image_url', 'experience_level'
-    ];
+    // Don't filter fields - let Supabase handle validation based on actual table schema
+    // This prevents issues with missing columns like 'certifications'
+    const profileUpdates = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
     
-    const filteredUpdates = Object.fromEntries(
-      Object.entries(updates).filter(([key]) => allowedFields.includes(key))
-    );
-    
-    // Ensure updated_at is set
-    filteredUpdates.updated_at = new Date().toISOString();
     
     // First, check if profile exists, if not create it
     const { data: existingProfile } = await supabase
       .from('user_profiles')
       .select('id')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     if (!existingProfile) {
       // Create profile if it doesn't exist
       const { data, error } = await supabase
         .from('user_profiles')
-        .insert([{ id: userId, ...filteredUpdates }])
+        .insert([{ id: userId, ...profileUpdates }])
         .select()
         .single();
       return { data, error };
@@ -154,7 +105,7 @@ export const db = {
       // Update existing profile
       const { data, error } = await supabase
         .from('user_profiles')
-        .update(filteredUpdates)
+        .update(profileUpdates)
         .eq('id', userId)
         .select()
         .single();
@@ -163,27 +114,36 @@ export const db = {
   },
 
   deleteUserAccount: async (userId) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return await mockAuth.deleteUserAccount(userId);
-    }
-    
     try {
-      // Use the database function for proper account deletion
-      const { data, error } = await supabase.rpc('delete_user_account', {
+      // First try to delete using the stored procedure
+      const { error: rpcError } = await supabase.rpc('delete_user_account', {
         p_user_id: userId
       });
       
-      if (error) {
-        console.error('Database deletion error:', error);
-        // Fallback to direct deletion if function doesn't exist
-        const { error: deleteError } = await supabase
-          .from('user_profiles')
-          .delete()
-          .eq('id', userId);
-        return { error: deleteError };
+      if (!rpcError) {
+        return { data: { success: true }, error: null };
       }
       
-      return { data, error: null };
+      console.warn('RPC function not found, performing manual deletion:', rpcError);
+      
+      // Manual cleanup if RPC function doesn't exist
+      const deletions = [
+        supabase.from('user_skills').delete().eq('user_id', userId),
+        supabase.from('saved_jobs').delete().eq('user_id', userId),
+        supabase.from('applications').delete().eq('user_id', userId),
+        supabase.from('user_profiles').delete().eq('id', userId)
+      ];
+      
+      // Execute all deletions
+      const results = await Promise.allSettled(deletions);
+      const errors = results.filter(r => r.status === 'rejected').map(r => r.reason);
+      
+      if (errors.length > 0) {
+        console.error('Some deletions failed:', errors);
+        return { error: errors[0] };
+      }
+      
+      return { data: { success: true }, error: null };
     } catch (err) {
       console.error('Account deletion failed:', err);
       return { error: err };
@@ -192,58 +152,6 @@ export const db = {
 
   // Jobs
   getJobs: async (filters = {}) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      // Return mock jobs data for development
-      return {
-        data: [
-          {
-            id: 1,
-            title: 'Senior Software Engineer',
-            description: 'We are looking for a Senior Software Engineer to join our growing team.',
-            location: 'San Francisco, CA',
-            job_type: 'full-time',
-            experience_level: 'senior',
-            salary_min: 120000,
-            salary_max: 150000,
-            salary_currency: 'USD',
-            is_remote: true,
-            created_at: '2024-01-15T10:00:00Z',
-            companies: {
-              id: 1,
-              name: 'TechCorp Inc.',
-              logo_url: null,
-              industry: 'technology',
-              size: '100-500',
-              description: 'Leading technology company'
-            },
-            skills_required: ['React', 'Node.js', 'JavaScript', 'Python']
-          },
-          {
-            id: 2,
-            title: 'Product Marketing Manager',
-            description: 'Join our marketing team to drive product growth and user engagement.',
-            location: 'New York, NY',
-            job_type: 'full-time',
-            experience_level: 'mid',
-            salary_min: 90000,
-            salary_max: 110000,
-            salary_currency: 'USD',
-            is_remote: false,
-            created_at: '2024-01-14T15:30:00Z',
-            companies: {
-              id: 2,
-              name: 'StartupXYZ',
-              logo_url: null,
-              industry: 'technology',
-              size: '50-100',
-              description: 'Fast-growing startup'
-            },
-            skills_required: ['Product Marketing', 'Analytics', 'A/B Testing']
-          }
-        ],
-        error: null
-      };
-    }
     
     let query = supabase
       .from('jobs')
@@ -292,45 +200,6 @@ export const db = {
   },
 
   getJobById: async (jobId) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      // Return mock job detail for development
-      const mockJob = {
-        id: parseInt(jobId),
-        title: 'Senior Software Engineer',
-        description: 'We are looking for a Senior Software Engineer to join our growing team. You will be responsible for building scalable web applications and leading technical initiatives.',
-        requirements: 'Bachelor\'s degree in Computer Science or related field. 5+ years of experience with React, Node.js, and cloud technologies.',
-        responsibilities: 'Lead development of new features, mentor junior developers, collaborate with product team, ensure code quality and best practices.',
-        benefits: 'Competitive salary, equity, health insurance, 401k matching, flexible PTO, remote work options.',
-        location: 'San Francisco, CA',
-        job_type: 'full-time',
-        employment_type: 'full-time',
-        experience_level: 'senior',
-        salary_min: 120000,
-        salary_max: 150000,
-        salary_currency: 'USD',
-        is_remote: true,
-        skills_required: ['React', 'Node.js', 'JavaScript', 'Python', 'AWS'],
-        application_deadline: '2024-03-01',
-        start_date: '2024-03-15',
-        contact_email: 'hiring@techcorp.com',
-        contact_phone: '+1 (555) 123-4567',
-        is_urgent: false,
-        application_instructions: 'Please include your portfolio and a brief cover letter.',
-        created_at: '2024-01-15T10:00:00Z',
-        companies: {
-          id: 1,
-          name: 'TechCorp Inc.',
-          logo_url: null,
-          industry: 'technology',
-          size: '100-500',
-          description: 'Leading technology company focused on innovative solutions.',
-          website: 'https://techcorp.com',
-          founded: '2010',
-          headquarters: 'San Francisco, CA'
-        }
-      };
-      return { data: mockJob, error: null };
-    }
     
     const { data, error } = await supabase
       .from('jobs')
@@ -389,18 +258,6 @@ export const db = {
 
   // Applications
   createApplication: async (applicationData) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      // Mock application for development
-      return {
-        data: {
-          id: `mock-app-${Date.now()}`,
-          status: 'pending',
-          created_at: new Date().toISOString(),
-          ...applicationData
-        },
-        error: null
-      };
-    }
     
     try {
       // Use the enhanced application function if available
@@ -506,10 +363,29 @@ export const db = {
   },
 
   deleteApplication: async (applicationId) => {
+    // Get application details before deletion for activity tracking
+    const { data: application } = await supabase
+      .from('applications')
+      .select('*, jobs(title, companies(name))')
+      .eq('id', applicationId)
+      .single();
+    
     const { error } = await supabase
       .from('applications')
       .delete()
       .eq('id', applicationId);
+    
+    // Add to activity feed if deletion was successful
+    if (!error && application) {
+      await db.addActivity(application.user_id, {
+        type: 'application_deleted',
+        title: 'Application Withdrawn',
+        description: `Withdrew application for ${application.jobs?.title} at ${application.jobs?.companies?.name}`,
+        related_id: applicationId,
+        related_type: 'application'
+      });
+    }
+    
     return { error };
   },
 
@@ -614,13 +490,6 @@ export const db = {
 
   // File Upload functionality
   uploadFile: async (file, bucket, filePath) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      // Mock file upload for development
-      return {
-        data: { path: `/mock-uploads/${bucket}/${filePath}` },
-        error: null
-      };
-    }
     
     try {
       const { data, error } = await supabase.storage
@@ -645,9 +514,6 @@ export const db = {
   },
 
   deleteFile: async (bucket, filePath) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return { error: null };
-    }
     
     try {
       const { data, error } = await supabase.storage
@@ -662,9 +528,6 @@ export const db = {
   },
 
   getFileUrl: async (bucket, filePath) => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return { data: { publicUrl: `/mock-uploads/${bucket}/${filePath}` }, error: null };
-    }
     
     try {
       const { data } = supabase.storage
@@ -680,9 +543,6 @@ export const db = {
 
   // Skills
   getSkills: async () => {
-    if (USE_MOCK_AUTH || !supabase) {
-      return { data: [], error: null };
-    }
     
     const { data, error } = await supabase
       .from('skills')
@@ -770,5 +630,37 @@ export const db = {
     };
     
     return { data: stats, error: null };
+  },
+
+  // Activity Tracking
+  addActivity: async (userId, activityData) => {
+    const { data, error } = await supabase
+      .from('activities')
+      .insert([{
+        user_id: userId,
+        ...activityData,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  getUserActivities: async (userId, limit = 10) => {
+    const { data, error } = await supabase
+      .from('activities')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    return { data, error };
+  },
+
+  deleteActivity: async (activityId) => {
+    const { error } = await supabase
+      .from('activities')
+      .delete()
+      .eq('id', activityId);
+    return { error };
   }
 };

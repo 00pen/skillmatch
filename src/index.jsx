@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./styles/tailwind.css";
 import "./styles/index.css";
+import { registerSW } from 'virtual:pwa-register';
 
 // Global error handlers
 window.addEventListener('unhandledrejection', (event) => {
@@ -13,6 +14,19 @@ window.addEventListener('unhandledrejection', (event) => {
 
 window.addEventListener('error', (event) => {
   console.error('Global error:', event.error);
+});
+
+// Register service worker for PWA
+const updateSW = registerSW({
+  onNeedRefresh() {
+    // Show a prompt to user
+    if (confirm('New content available! Reload to update?')) {
+      updateSW(true);
+    }
+  },
+  onOfflineReady() {
+    console.log('App ready to work offline');
+  },
 });
 
 const container = document.getElementById("root");
