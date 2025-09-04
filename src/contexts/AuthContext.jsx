@@ -164,27 +164,67 @@ export const AuthProvider = ({ children }) => {
         };
       }
       
-      const { data, error } = await auth.signUp(email, password, userData);
+      // Prepare metadata with correct field names for Supabase
+      const metadata = {
+        full_name: userData.fullName,
+        role: userData.role?.replace('-', '_'), // Convert job-seeker to job_seeker
+        location: userData.location,
+        current_job_title: userData.currentJobTitle,
+        company_name: userData.companyName,
+        industry: userData.industry
+      };
       
-      if (error) throw error;
+      console.log('Signing up user with data:', { email, userData, metadata });
+      const { data, error } = await auth.signUp(email, password, metadata);
+      
+      if (error) {
+        console.error('Auth signup error:', error);
+        throw error;
+      }
+      
+      console.log('Auth signup successful:', data);
       
       if (data.user) {
         try {
           // Create user profile
           const profileData = {
             full_name: userData.fullName,
-            role: userData.role,
+            role: userData.role?.replace('-', '_'), // Convert job-seeker to job_seeker
             location: userData.location,
             current_job_title: userData.currentJobTitle,
             company_name: userData.companyName,
             industry: userData.industry
           };
           
-          console.log('Registering user:', { ...userData, id: data.user.id });
-          const { error: profileError } = await db.createUserProfile(data.user.id, profileData);
-          if (profileError) {
-            console.error('Error creating user profile:', profileError);
-            // Don't throw error for profile creation failure, as auth was successful
+          console.log('Creating user profile with data:', { userId: data.user.id, profileData });
+          
+          // First try to get existing profile (created by trigger)
+          const { data: existingProfile, error: getError } = await db.getUserProfile(data.user.id);
+          
+          if (getError && getError.code !== 'PGRST116') {
+            console.error('Error getting existing profile:', getError);
+          }
+          
+          let profileResult;
+          if (existingProfile) {
+            // Update existing profile with full data
+            console.log('Updating existing profile with full data');
+            const { data: updateResult, error: updateError } = await db.updateUserProfile(data.user.id, profileData);
+            if (updateError) {
+              console.error('Error updating user profile:', updateError);
+            } else {
+              profileResult = updateResult;
+              console.log('User profile updated successfully:', profileResult);
+            }
+          } else {
+            // Create new profile
+            const { data: createResult, error: createError } = await db.createUserProfile(data.user.id, profileData);
+            if (createError) {
+              console.error('Error creating user profile:', createError);
+            } else {
+              profileResult = createResult;
+              console.log('User profile created successfully:', profileResult);
+            }
           }
         } catch (profileError) {
           console.error('Profile creation failed:', profileError);
