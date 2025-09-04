@@ -236,14 +236,20 @@ export const AuthProvider = ({ children }) => {
       const { data, error: deletionError } = await db.deleteUserAccount(user.id);
       if (deletionError) throw deletionError;
       
-      // Clear local state
+      // Clear local state immediately
       setUser(null);
       setUserProfile(null);
+      
+      // Force sign out to ensure user is logged out
+      await auth.signOut();
       
       return { data, error: null };
     } catch (error) {
       console.error('Account deletion error:', error);
-      // Don't clear state if deletion fails - user should retry
+      // Clear state even if deletion fails to prevent further issues
+      setUser(null);
+      setUserProfile(null);
+      await auth.signOut();
       return { data: null, error };
     } finally {
       setIsLoading(false);

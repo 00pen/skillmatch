@@ -315,7 +315,7 @@ const Profile = () => {
 
   const handleDeleteAccount = async () => {
     const confirmDelete = window.confirm(
-      'Are you absolutely sure you want to delete your account? This action cannot be undone and will permanently delete:\\n\\n• Your profile and personal information\\n• All job applications\\n• Saved jobs\\n• Account history\\n\\nType "DELETE" to confirm:'
+      'Are you absolutely sure you want to delete your account? This action cannot be undone and will permanently delete:\\n\\n• Your profile and personal information\\n• All job applications\\n• Saved jobs\\n• Account history\\n\\nYou will be logged out immediately and unable to login with this account again.'
     );
     
     if (confirmDelete) {
@@ -328,8 +328,9 @@ const Profile = () => {
             console.error('Account deletion error:', error);
             alert(`Failed to delete account: ${error.message || 'Please try again or contact support.'}`);
           } else {
-            alert(data?.message || 'Your account has been permanently deleted.');
-            navigate('/');
+            alert('Your account has been permanently deleted. You have been logged out.');
+            // Navigate to home page - user should be logged out
+            window.location.href = '/';
           }
         } catch (error) {
           console.error('Account deletion error:', error);
