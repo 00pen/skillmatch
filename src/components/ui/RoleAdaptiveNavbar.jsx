@@ -122,7 +122,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                       {userProfile?.full_name || (user?.email ? user.email.split('@')[0] : 'User')}
                     </div>
                     <div className="text-text-secondary capitalize">
-                      {userProfile?.role?.replace('_', ' ') || 'User'}
+                      {userProfile?.role?.replace('_', ' ').replace('-', ' ') || 'User'}
                     </div>
                   </div>
                 </div>
@@ -200,7 +200,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                         {userProfile?.full_name || (user?.email ? user.email.split('@')[0] : 'User')}
                       </div>
                       <div className="text-sm text-text-secondary capitalize">
-                        {userRole?.replace('_', ' ')}
+                        {userRole?.replace('_', ' ').replace('-', ' ')}
                       </div>
                     </div>
                   </div>

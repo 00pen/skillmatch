@@ -32,7 +32,7 @@ const JobSeekerDashboard = () => {
       return;
     }
     
-    if (userProfile && userProfile.role !== 'job-seeker') {
+    if (userProfile && userProfile.role !== 'job_seeker' && userProfile.role !== 'job-seeker') {
       navigate('/employer-dashboard');
       return;
     }

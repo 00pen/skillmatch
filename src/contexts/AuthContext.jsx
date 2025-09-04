@@ -114,10 +114,13 @@ export const AuthProvider = ({ children }) => {
       
       // If no profile exists, create a basic one
       if (!profile) {
+        // Get current user data for profile creation
+        const { data: { user: currentUser } } = await auth.getUser();
+        
         const { data: newProfile, error: createError } = await db.createUserProfile(userId, {
-          full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
-          email: user?.email,
-          role: user?.user_metadata?.role || 'job_seeker'
+          full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'User',
+          email: currentUser?.email,
+          role: currentUser?.user_metadata?.role || 'job_seeker'
         });
         
         if (createError) {
@@ -129,6 +132,7 @@ export const AuthProvider = ({ children }) => {
         return { data: newProfile, error: null };
       }
       
+      console.log('User profile loaded:', profile);
       setUserProfile(profile);
       return { data: profile, error: null };
     } catch (error) {
