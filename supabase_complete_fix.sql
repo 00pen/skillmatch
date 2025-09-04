@@ -55,9 +55,20 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     profile_completion INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add foreign key constraint only if auth.users table exists
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'auth' AND table_name = 'users') THEN
+        ALTER TABLE user_profiles 
+        ADD CONSTRAINT user_profiles_id_fkey 
+        FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
+    END IF;
+EXCEPTION 
+    WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Companies Table
 CREATE TABLE IF NOT EXISTS companies (
@@ -138,22 +149,62 @@ CREATE TABLE IF NOT EXISTS saved_jobs (
     UNIQUE(job_id, user_id)
 );
 
--- Conversations Table
+-- Conversations Table (Optional - for future messaging features)
 CREATE TABLE IF NOT EXISTS conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    participant_1_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-    participant_2_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-    job_id UUID REFERENCES jobs(id) ON DELETE SET NULL,
+    participant_1_id UUID NOT NULL,
+    participant_2_id UUID NOT NULL,
+    job_id UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_message_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Messages Table
+-- Add foreign key constraints for conversations
+DO $$ 
+BEGIN
+    -- Add participant_1_id foreign key
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'conversations_participant_1_id_fkey' 
+        AND table_name = 'conversations'
+    ) THEN
+        ALTER TABLE conversations 
+        ADD CONSTRAINT conversations_participant_1_id_fkey 
+        FOREIGN KEY (participant_1_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
+    END IF;
+    
+    -- Add participant_2_id foreign key  
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'conversations_participant_2_id_fkey' 
+        AND table_name = 'conversations'
+    ) THEN
+        ALTER TABLE conversations 
+        ADD CONSTRAINT conversations_participant_2_id_fkey 
+        FOREIGN KEY (participant_2_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
+    END IF;
+    
+    -- Add job_id foreign key
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'conversations_job_id_fkey' 
+        AND table_name = 'conversations'
+    ) THEN
+        ALTER TABLE conversations 
+        ADD CONSTRAINT conversations_job_id_fkey 
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE SET NULL;
+    END IF;
+EXCEPTION 
+    WHEN duplicate_object THEN NULL;
+    WHEN others THEN NULL; -- Ignore if referenced tables don't exist yet
+END $$;
+
+-- Messages Table (Optional - for future messaging features)
 CREATE TABLE IF NOT EXISTS messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sender_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-    recipient_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-    job_id UUID REFERENCES jobs(id) ON DELETE SET NULL,
+    sender_id UUID NOT NULL,
+    recipient_id UUID NOT NULL,
+    job_id UUID,
     content TEXT NOT NULL,
     message_type TEXT DEFAULT 'general',
     attachment_url TEXT,
@@ -162,6 +213,46 @@ CREATE TABLE IF NOT EXISTS messages (
     is_read BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add foreign key constraints for messages
+DO $$ 
+BEGIN
+    -- Add sender_id foreign key
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'messages_sender_id_fkey' 
+        AND table_name = 'messages'
+    ) THEN
+        ALTER TABLE messages 
+        ADD CONSTRAINT messages_sender_id_fkey 
+        FOREIGN KEY (sender_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
+    END IF;
+    
+    -- Add recipient_id foreign key
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'messages_recipient_id_fkey' 
+        AND table_name = 'messages'
+    ) THEN
+        ALTER TABLE messages 
+        ADD CONSTRAINT messages_recipient_id_fkey 
+        FOREIGN KEY (recipient_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
+    END IF;
+    
+    -- Add job_id foreign key
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'messages_job_id_fkey' 
+        AND table_name = 'messages'
+    ) THEN
+        ALTER TABLE messages 
+        ADD CONSTRAINT messages_job_id_fkey 
+        FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE SET NULL;
+    END IF;
+EXCEPTION 
+    WHEN duplicate_object THEN NULL;
+    WHEN others THEN NULL; -- Ignore if jobs table doesn't exist yet
+END $$;
 
 -- ============================================================================
 -- STORAGE POLICIES (if not exists)
