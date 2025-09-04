@@ -158,10 +158,10 @@ const QuickApplyModal = ({ isOpen, onClose, job }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto"
       onClick={handleOverlayClick}
     >
-      <div className="bg-card border border-border rounded-lg shadow-modal w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+      <div className="bg-card border border-border rounded-lg shadow-modal w-full max-w-2xl my-8 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
@@ -180,7 +180,7 @@ const QuickApplyModal = ({ isOpen, onClose, job }) => {
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="flex-1 overflow-y-auto">
           {!profileCheck.isComplete ? (
             <div className="p-6">
               <div className="bg-warning/10 border border-warning rounded-lg p-4 mb-6">

@@ -214,22 +214,26 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       if (!user) throw new Error('No authenticated user');
       
-      // First delete user profile and related data
-      const { error: profileError } = await db.deleteUserAccount(user.id);
-      if (profileError) throw profileError;
+      // Use the proper account deletion function from our SQL migration
+      if (supabase) {
+        const { error: deletionError } = await supabase.rpc('delete_user_account', {
+          user_id_to_delete: user.id
+        });
+        if (deletionError) throw deletionError;
+      } else {
+        // Fallback for mock auth
+        const { error: profileError } = await db.deleteUserAccount(user.id);
+        if (profileError) throw profileError;
+      }
       
-      // Then delete auth user
-      const { error: authError } = await auth.signOut();
-      
-      // Clear local state regardless of auth response
+      // Clear local state
       setUser(null);
       setUserProfile(null);
       
-      return { error: authError };
+      return { error: null };
     } catch (error) {
-      // Clear state even if deletion fails
-      setUser(null);
-      setUserProfile(null);
+      console.error('Account deletion error:', error);
+      // Don't clear state if deletion fails - user should retry
       return { error };
     } finally {
       setIsLoading(false);

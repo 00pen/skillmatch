@@ -4,9 +4,16 @@ import { mockAuth } from './database.js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Use hybrid approach: PostgreSQL database with mock auth and local file storage
-const USE_MOCK_AUTH = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-project');
-const USE_LOCAL_DB = false; // Use real Supabase database since we have credentials
+// Check if we have real Supabase credentials
+const USE_MOCK_AUTH = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-project') || supabaseUrl.includes('localhost');
+const USE_LOCAL_DB = USE_MOCK_AUTH; // Use local DB only when we don't have real Supabase
+
+console.log('Supabase Configuration:', {
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseAnonKey,
+  useMockAuth: USE_MOCK_AUTH,
+  url: supabaseUrl?.substring(0, 20) + '...' || 'not set'
+});
 
 let supabase = null;
 if (!USE_MOCK_AUTH) {
