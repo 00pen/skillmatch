@@ -40,6 +40,7 @@ const MessageCenter = ({ isOpen, onClose, recipientId, jobId = null }) => {
     try {
       if (!supabase) {
         console.log('Messaging requires real Supabase connection');
+        setConversations([]);
         return;
       }
 
@@ -54,10 +55,19 @@ const MessageCenter = ({ isOpen, onClose, recipientId, jobId = null }) => {
         .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // Handle table not existing gracefully
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          console.log('Messaging tables not set up yet - messaging features disabled');
+          setConversations([]);
+          return;
+        }
+        throw error;
+      }
       setConversations(data || []);
     } catch (error) {
       console.error('Error loading conversations:', error);
+      setConversations([]);
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +75,10 @@ const MessageCenter = ({ isOpen, onClose, recipientId, jobId = null }) => {
 
   const loadMessages = async (conversationId) => {
     try {
-      if (!supabase) return;
+      if (!supabase) {
+        setMessages([]);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('messages')
@@ -77,10 +90,19 @@ const MessageCenter = ({ isOpen, onClose, recipientId, jobId = null }) => {
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        // Handle table not existing gracefully
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          console.log('Messages table not set up yet');
+          setMessages([]);
+          return;
+        }
+        throw error;
+      }
       setMessages(data || []);
     } catch (error) {
       console.error('Error loading messages:', error);
+      setMessages([]);
     }
   };
 
@@ -110,7 +132,13 @@ const MessageCenter = ({ isOpen, onClose, recipientId, jobId = null }) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          alert('Messaging feature not available yet. Please contact support.');
+          return;
+        }
+        throw error;
+      }
 
       setMessages(prev => [...prev, data]);
       setNewMessage('');
@@ -139,12 +167,19 @@ const MessageCenter = ({ isOpen, onClose, recipientId, jobId = null }) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          alert('Messaging feature not available yet. Please contact support.');
+          return;
+        }
+        throw error;
+      }
       
       setSelectedConversation(data);
       loadConversations();
     } catch (error) {
       console.error('Error creating conversation:', error);
+      alert('Unable to start conversation. Please try again later.');
     }
   };
 
