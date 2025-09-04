@@ -127,11 +127,11 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="text-lg font-semibold text-text-primary hover:text-secondary transition-colors duration-150">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h3 className="text-lg font-semibold text-text-primary hover:text-secondary transition-colors duration-150 line-clamp-2 break-words">
                           {job?.title}
                         </h3>
-                        <p className="text-text-secondary font-medium">
+                        <p className="text-text-secondary font-medium truncate">
                           {job?.company}
                         </p>
                       </div>
@@ -147,26 +147,26 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
                       </button>
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary mb-3">
-                      <div className="flex items-center space-x-1">
-                        <Icon name="MapPin" size={14} />
-                        <span>{job?.location}</span>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-text-secondary mb-3">
+                      <div className="flex items-center space-x-1 min-w-0">
+                        <Icon name="MapPin" size={14} className="flex-shrink-0" />
+                        <span className="truncate max-w-[120px]">{job?.location}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 flex-shrink-0">
                         <Icon name="DollarSign" size={14} />
-                        <span>{formatSalary(job?.salaryMin, job?.salaryMax)}</span>
+                        <span className="whitespace-nowrap">{formatSalary(job?.salaryMin, job?.salaryMax)}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 flex-shrink-0">
                         <Icon name="Clock" size={14} />
-                        <span>{job?.type}</span>
+                        <span className="capitalize">{job?.type}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 flex-shrink-0">
                         <Icon name="Calendar" size={14} />
                         <span>{getTimeAgo(job?.postedDate)}</span>
                       </div>
                     </div>
                     
-                    <p className="text-sm text-text-primary mb-3 line-clamp-2">
+                    <p className="text-sm text-text-primary mb-3 line-clamp-2 break-words">
                       {job?.description}
                     </p>
                     
@@ -174,30 +174,31 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
                       {job?.skills?.slice(0, 4)?.map((skill, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent text-secondary"
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent text-secondary truncate max-w-[100px]"
+                          title={skill}
                         >
                           {skill}
                         </span>
                       ))}
                       {job?.skills?.length > 4 && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-text-secondary">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-text-secondary flex-shrink-0">
                           +{job?.skills?.length - 4} more
                         </span>
                       )}
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-2 min-w-0 flex-1">
+                        <div className="flex items-center space-x-1 flex-shrink-0">
                           <Icon name="Users" size={14} className="text-text-secondary" />
-                          <span className="text-xs text-text-secondary">
+                          <span className="text-xs text-text-secondary whitespace-nowrap">
                             {job?.applicants || 0} applicants
                           </span>
                         </div>
                         {job?.matchPercentage && (
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-1 flex-shrink-0">
                             <Icon name="Target" size={14} className="text-success" />
-                            <span className="text-xs text-success font-medium">
+                            <span className="text-xs text-success font-medium whitespace-nowrap">
                               {job?.matchPercentage}% match
                             </span>
                           </div>
@@ -210,6 +211,7 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
                         onClick={(e) => handleQuickApply(e, job?.id)}
                         iconName="Send"
                         iconPosition="left"
+                        className="flex-shrink-0 ml-2"
                       >
                         Quick Apply
                       </Button>
