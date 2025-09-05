@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { getErrorMessage } from '../../utils/errorHandler';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import Input from '../../components/ui/Input';
@@ -65,9 +66,32 @@ const Login = () => {
       if (from !== '/') {
         navigate(from);
       } else {
-        // Wait for AuthContext to load the user profile from database
-        // The ProtectedRoute component will handle the redirect based on actual role
-        navigate('/job-seeker-dashboard');
+        // Wait a moment for AuthContext to load the user profile from database
+        setTimeout(async () => {
+          try {
+            // Get the current user's profile to determine correct dashboard
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            if (currentUser) {
+              const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+              
+              // Navigate to appropriate dashboard based on actual role
+              if (profile?.role === 'employer') {
+                navigate('/employer-dashboard');
+              } else {
+                navigate('/job-seeker-dashboard');
+              }
+            } else {
+              navigate('/job-seeker-dashboard');
+            }
+          } catch (error) {
+            console.error('Error determining user role:', error);
+            navigate('/job-seeker-dashboard');
+          }
+        }, 100);
       }
       
     } catch (error) {
