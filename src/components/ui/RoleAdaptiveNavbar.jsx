@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Icon from '../AppIcon';
 import Button from './Button';
+import UserProfileDropdown from './UserProfileDropdown';
 
 const RoleAdaptiveNavbar = ({ className = '' }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -112,31 +113,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-2 lg:space-x-4">
-                <div className="flex items-center space-x-1 lg:space-x-2 min-w-0">
-                  <div className="w-6 h-6 lg:w-8 lg:h-8 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
-                    <Icon name="User" size={14} className="lg:w-4 lg:h-4" color="var(--color-text-secondary)" />
-                  </div>
-                  <div className="text-xs lg:text-sm min-w-0">
-                    <div className="font-medium text-text-primary truncate">
-                      {userProfile?.full_name || (user?.email ? user.email.split('@')[0] : 'User')}
-                    </div>
-                    <div className="text-text-secondary capitalize truncate">
-                      {userProfile?.role?.replace('_', ' ').replace('-', ' ') || 'User'}
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  iconName="LogOut"
-                  iconSize={14}
-                  className="text-xs lg:text-sm px-2 lg:px-3"
-                >
-                  <span className="hidden lg:inline">Logout</span>
-                </Button>
-              </div>
+              <UserProfileDropdown />
             ) : (
               <div className="flex items-center space-x-1 lg:space-x-2">
                 <Button

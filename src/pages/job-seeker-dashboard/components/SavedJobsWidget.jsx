@@ -7,7 +7,7 @@ const SavedJobsWidget = ({ savedJobsCount = 0, recentSavedJobs = [] }) => {
   const navigate = useNavigate();
 
   const handleViewSavedJobs = () => {
-    navigate('/job-search-results?filter=saved');
+    navigate('/saved-jobs');
   };
 
   const handleJobClick = (jobId) => {
@@ -31,7 +31,7 @@ const SavedJobsWidget = ({ savedJobsCount = 0, recentSavedJobs = [] }) => {
             <div 
               key={job?.id} 
               className="p-3 bg-muted rounded-lg cursor-pointer hover:bg-accent transition-colors duration-150"
-              onClick={() => handleJobClick(job?.id)}
+              onClick={() => handleJobClick(job?.job_id)}
             >
               <h4 className="text-sm font-medium text-text-primary truncate mb-1">
                 {job?.title}

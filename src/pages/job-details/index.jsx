@@ -12,6 +12,7 @@ import JobInfoPanel from './components/JobInfoPanel';
 import RelatedJobs from './components/RelatedJobs';
 import ApplicationModal from './components/ApplicationModal';
 import ShareModal from './components/ShareModal';
+import SuccessToast from '../../components/ui/SuccessToast';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
 
@@ -40,6 +41,7 @@ const JobDetails = () => {
   
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
   
   // Get related jobs (same industry or similar skills)
   const relatedJobs = allJobs && Array.isArray(allJobs) ? allJobs.filter(j => 
@@ -88,10 +90,13 @@ const JobDetails = () => {
           return;
         }
         
-        // Show success and redirect
+        // Show success toast
+        setShowSuccessToast(true);
+        
+        // Redirect after showing success message
         setTimeout(() => {
           navigate('/application-tracking');
-        }, 1000);
+        }, 3000);
       } catch (error) {
         console.error('Application submission failed:', error);
       }
@@ -280,6 +285,25 @@ const JobDetails = () => {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         job={job}
+      />
+      {/* Success Toast */}
+      <SuccessToast
+        isVisible={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        title="Application Submitted!"
+        message={`Your application for ${job?.title} at ${job?.company?.name} has been submitted successfully.`}
+        actionButton={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/application-tracking')}
+            iconName="FileText"
+            iconPosition="left"
+            className="text-xs"
+          >
+            View Applications
+          </Button>
+        }
       />
       {/* Bottom padding for mobile sticky button */}
       <div className="h-20 lg:hidden"></div>

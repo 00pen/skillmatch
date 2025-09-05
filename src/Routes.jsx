@@ -19,6 +19,7 @@ import JobPosting from './pages/job-posting/index';
 import CandidateBrowsing from './pages/candidates/index';
 import CandidateDetails from './pages/candidate-details/index';
 import CompanyDetails from './pages/company-details/index';
+import SavedJobs from './pages/saved-jobs';
 
 const Routes = () => {
   return (
@@ -119,6 +120,13 @@ const Routes = () => {
               <ProtectedRoute>
                 <PageTransition>
                   <CompanyDetails />
+                </PageTransition>
+              </ProtectedRoute>
+            } />
+            <Route path="/saved-jobs" element={
+              <ProtectedRoute requiredRole="job-seeker">
+                <PageTransition>
+                  <SavedJobs />
                 </PageTransition>
               </ProtectedRoute>
             } />

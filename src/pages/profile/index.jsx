@@ -57,12 +57,16 @@ const Profile = () => {
     // Documents
     resume_url: '',
     cover_letter_url: '',
-    portfolio_files: []
+    portfolio_files: [],
+    
+    // Profile Picture
+    profile_picture_url: ''
   });
   
   const [resumeFile, setResumeFile] = useState(null);
   const [coverLetterFile, setCoverLetterFile] = useState(null);
   const [portfolioFile, setPortfolioFile] = useState(null);
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
   const [activeTab, setActiveTab] = useState('basic');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -167,7 +171,10 @@ const Profile = () => {
         // Documents
         resume_url: userProfile.resume_url || '',
         cover_letter_url: userProfile.cover_letter_url || '',
-        portfolio_files: userProfile.portfolio_files || []
+        portfolio_files: userProfile.portfolio_files || [],
+        
+        // Profile Picture
+        profile_picture_url: userProfile.profile_picture_url || ''
       });
     }
   }, [userProfile]);
@@ -227,6 +234,8 @@ const Profile = () => {
         bucket = 'user-resumes'; // Store cover letters in the same bucket as resumes
       } else if (type === 'portfolio') {
         bucket = 'user-portfolios';
+      } else if (type === 'profile_picture') {
+        bucket = 'profile-pictures';
       } else {
         bucket = 'user-files'; // Default bucket
       }
@@ -253,6 +262,9 @@ const Profile = () => {
       } else if (type === 'portfolio') {
         setPortfolioFile(file);
         handleInputChange('portfolio_url', fileUrl);
+      } else if (type === 'profile_picture') {
+        setProfilePictureFile(file);
+        handleInputChange('profile_picture_url', fileUrl);
       }
       
       console.log(`File uploaded successfully: ${fileName}`, { fileUrl, bucket });
@@ -304,6 +316,9 @@ const Profile = () => {
       } else if (type === 'portfolio') {
         setPortfolioFile(null);
         handleInputChange('portfolio_url', '');
+      } else if (type === 'profile_picture') {
+        setProfilePictureFile(null);
+        handleInputChange('profile_picture_url', '');
       }
       
     } catch (error) {
@@ -477,81 +492,109 @@ const Profile = () => {
                 </nav>
               </div>
 
-              {/* Basic Information Tab */}
-              {activeTab === 'basic' && (
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-text-primary">Basic Information</h3>
-                
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        label="Full Name"
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={formData.full_name}
-                        onChange={(e) => handleInputChange('full_name', e.target.value)}
-                        error={errors.full_name}
-                        required
-                      />
-                      
-                      <Input
-                        label="Phone Number"
-                        type="tel"
-                        placeholder="Your phone number"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                      />
+            {/* Basic Information Tab */}
+            {activeTab === 'basic' && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-text-primary">Basic Information</h3>
+                  
+                  {/* Profile Picture Section */}
+                  <div className="bg-card border border-border rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-text-primary mb-4">Profile Picture</h3>
+                    <div className="flex items-center space-x-6">
+                      <div className="w-24 h-24 rounded-full bg-background border-2 border-border flex items-center justify-center overflow-hidden">
+                        {formData.profile_picture_url ? (
+                          <img 
+                            src={formData.profile_picture_url} 
+                            alt="Profile" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Icon name="User" size={32} className="text-text-secondary" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <FileUpload
+                          label="Upload Profile Picture"
+                          accept="image/*"
+                          maxSize={5}
+                          onFileSelect={(file) => handleFileUpload(file, 'profile_picture')}
+                          currentFile={profilePictureFile}
+                          helperText="Upload a profile picture (JPG, PNG, max 5MB)"
+                        />
+                      </div>
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Input
-                        label="Location"
-                        type="text"
-                        placeholder="City, State or Country"
-                        value={formData.location}
-                        onChange={(e) => handleInputChange('location', e.target.value)}
-                      />
-                      
-                      <Input
-                        label="Date of Birth"
-                        type="date"
-                        value={formData.date_of_birth}
-                        onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-                      />
-                      
-                      <Select
-                        label="Gender"
-                        placeholder="Select gender"
-                        options={[
-                          { value: 'male', label: 'Male' },
-                          { value: 'female', label: 'Female' },
-                          { value: 'other', label: 'Other' },
-                          { value: 'prefer-not-to-say', label: 'Prefer not to say' }
-                        ]}
-                        value={formData.gender}
-                        onChange={(value) => handleInputChange('gender', value)}
-                      />
-                    </div>
-                    
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
-                      label="Nationality"
+                      label="Full Name"
                       type="text"
-                      placeholder="Your nationality"
-                      value={formData.nationality}
-                      onChange={(e) => handleInputChange('nationality', e.target.value)}
+                      placeholder="Enter your full name"
+                      value={formData.full_name}
+                      onChange={(e) => handleInputChange('full_name', e.target.value)}
+                      error={errors.full_name}
+                      required
                     />
                     
                     <Input
-                      label="Bio"
-                      type="textarea"
-                      placeholder="Tell us about yourself..."
-                      value={formData.bio}
-                      onChange={(e) => handleInputChange('bio', e.target.value)}
-                      rows={4}
+                      label="Phone Number"
+                      type="tel"
+                      placeholder="Your phone number"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
                     />
                   </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Input
+                      label="Location"
+                      type="text"
+                      placeholder="City, State or Country"
+                      value={formData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                    />
+                    
+                    <Input
+                      label="Date of Birth"
+                      type="date"
+                      value={formData.date_of_birth}
+                      onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
+                    />
+                    
+                    <Select
+                      label="Gender"
+                      placeholder="Select gender"
+                      options={[
+                        { value: 'male', label: 'Male' },
+                        { value: 'female', label: 'Female' },
+                        { value: 'other', label: 'Other' },
+                        { value: 'prefer-not-to-say', label: 'Prefer not to say' }
+                      ]}
+                      value={formData.gender}
+                      onChange={(value) => handleInputChange('gender', value)}
+                    />
+                  </div>
+                  
+                  <Input
+                    label="Nationality"
+                    type="text"
+                    placeholder="Your nationality"
+                    value={formData.nationality}
+                    onChange={(e) => handleInputChange('nationality', e.target.value)}
+                  />
+                  
+                  <Input
+                    label="Bio"
+                    type="textarea"
+                    placeholder="Tell us about yourself..."
+                    value={formData.bio}
+                    onChange={(e) => handleInputChange('bio', e.target.value)}
+                    rows={4}
+                  />
                 </div>
-              )}
+              </div>
+            )}
 
               {/* Professional Information Tab */}
               {activeTab === 'professional' && (
