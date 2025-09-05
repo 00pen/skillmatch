@@ -7,7 +7,7 @@ import Button from '../../../components/ui/Button';
 const RelatedJobs = ({ jobs = [], currentJobId }) => {
   const navigate = useNavigate();
 
-  const filteredJobs = jobs?.filter(job => job?.id !== currentJobId)?.slice(0, 3);
+  const filteredJobs = jobs && Array.isArray(jobs) ? jobs.filter(job => job?.id !== currentJobId).slice(0, 3) : [];
 
   if (filteredJobs?.length === 0) {
     return null;
@@ -62,7 +62,7 @@ const RelatedJobs = ({ jobs = [], currentJobId }) => {
         </Button>
       </div>
       <div className="space-y-4">
-        {filteredJobs?.map((job) => (
+        {filteredJobs && Array.isArray(filteredJobs) ? filteredJobs.map((job) => (
           <div
             key={job?.id}
             className="border border-border rounded-lg p-4 hover:shadow-card transition-shadow duration-150 cursor-pointer"
@@ -118,7 +118,7 @@ const RelatedJobs = ({ jobs = [], currentJobId }) => {
               </div>
             </div>
           </div>
-        ))}
+        )) : null}
       </div>
       <div className="mt-6 pt-4 border-t border-border">
         <Button

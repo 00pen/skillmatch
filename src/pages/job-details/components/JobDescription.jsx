@@ -35,24 +35,28 @@ const JobDescription = ({ job }) => {
       <div>
         <h3 className="text-lg font-semibold text-text-primary mb-3">Key Responsibilities</h3>
         <ul className="space-y-2">
-          {job?.responsibilities?.map((responsibility, index) => (
+          {job?.responsibilities && Array.isArray(job.responsibilities) ? job.responsibilities.map((responsibility, index) => (
             <li key={index} className="flex items-start gap-3">
               <Icon name="ChevronRight" size={16} className="text-secondary mt-1 flex-shrink-0" />
               <span className="text-text-secondary">{responsibility}</span>
             </li>
-          ))}
+          )) : (
+            <li className="text-text-secondary">No specific responsibilities listed</li>
+          )}
         </ul>
       </div>
 
       <div>
         <h3 className="text-lg font-semibold text-text-primary mb-3">What We Offer</h3>
         <ul className="space-y-2">
-          {job?.benefits?.map((benefit, index) => (
+          {job?.benefits && Array.isArray(job.benefits) ? job.benefits.map((benefit, index) => (
             <li key={index} className="flex items-start gap-3">
               <Icon name="Check" size={16} className="text-success mt-1 flex-shrink-0" />
               <span className="text-text-secondary">{benefit}</span>
             </li>
-          ))}
+          )) : (
+            <li className="text-text-secondary">No specific benefits listed</li>
+          )}
         </ul>
       </div>
     </div>
@@ -63,27 +67,31 @@ const JobDescription = ({ job }) => {
       <div>
         <h3 className="text-lg font-semibold text-text-primary mb-3">Required Qualifications</h3>
         <ul className="space-y-2">
-          {job?.requirements?.map((requirement, index) => (
+          {job?.requirements && Array.isArray(job.requirements) ? job.requirements.map((requirement, index) => (
             <li key={index} className="flex items-start gap-3">
               <Icon name="CheckCircle" size={16} className="text-secondary mt-1 flex-shrink-0" />
               <span className="text-text-secondary">{requirement}</span>
             </li>
-          ))}
+          )) : (
+            <li className="text-text-secondary">No specific requirements listed</li>
+          )}
         </ul>
       </div>
 
       <div>
         <h3 className="text-lg font-semibold text-text-primary mb-3">Required Skills</h3>
         <div className="flex flex-wrap gap-2">
-          {job?.requiredSkills?.map(skill => renderSkillBadge(skill, 'required'))}
+          {job?.requiredSkills && Array.isArray(job.requiredSkills) ? job.requiredSkills.map(skill => renderSkillBadge(skill, 'required')) : (
+            <span className="text-text-secondary">No specific skills listed</span>
+          )}
         </div>
       </div>
 
-      {job?.preferredSkills && job?.preferredSkills?.length > 0 && (
+      {job?.preferredSkills && Array.isArray(job.preferredSkills) && job.preferredSkills.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold text-text-primary mb-3">Preferred Skills</h3>
           <div className="flex flex-wrap gap-2">
-            {job?.preferredSkills?.map(skill => renderSkillBadge(skill, 'preferred'))}
+            {job.preferredSkills.map(skill => renderSkillBadge(skill, 'preferred'))}
           </div>
         </div>
       )}
@@ -189,7 +197,7 @@ const JobDescription = ({ job }) => {
       {/* Tab Navigation */}
       <div className="border-b border-border">
         <nav className="flex space-x-8 px-6" aria-label="Job details tabs">
-          {tabs?.map((tab) => (
+          {tabs && Array.isArray(tabs) ? tabs.map((tab) => (
             <button
               key={tab?.id}
               onClick={() => setActiveTab(tab?.id)}
@@ -201,7 +209,7 @@ const JobDescription = ({ job }) => {
               <Icon name={tab?.icon} size={16} />
               {tab?.label}
             </button>
-          ))}
+          )) : null}
         </nav>
       </div>
       {/* Tab Content */}

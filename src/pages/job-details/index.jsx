@@ -42,11 +42,11 @@ const JobDetails = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
   // Get related jobs (same industry or similar skills)
-  const relatedJobs = allJobs?.filter(j => 
+  const relatedJobs = allJobs && Array.isArray(allJobs) ? allJobs.filter(j => 
     j.id !== jobId && 
     (j.company?.industry === job?.company?.industry || 
-     j.skills?.some(skill => job?.requiredSkills?.includes(skill)))
-  )?.slice(0, 3) || [];
+     (j.skills && Array.isArray(j.skills) && job?.requiredSkills && Array.isArray(job.requiredSkills) && j.skills.some(skill => job.requiredSkills.includes(skill))))
+  ).slice(0, 3) : [];
   
   const isSaved = savedJobIds?.has(jobId);
 
@@ -143,7 +143,7 @@ const JobDetails = () => {
                     <div className="space-y-4">
                       <div className="h-6 bg-muted rounded w-1/2"></div>
                       <div className="space-y-3">
-                        {[...Array(6)]?.map((_, i) => (
+                        {Array.from({ length: 6 }).map((_, i) => (
                           <div key={i} className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-muted rounded-lg"></div>
                             <div className="flex-1">

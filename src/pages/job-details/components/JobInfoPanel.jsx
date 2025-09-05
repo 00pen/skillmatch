@@ -80,7 +80,7 @@ const JobInfoPanel = ({ job }) => {
         Job Information
       </h3>
       <div className="space-y-4">
-        {infoItems?.map((item, index) => (
+        {infoItems && Array.isArray(infoItems) ? infoItems.map((item, index) => (
           <div key={index} className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
               <Icon name={item?.icon} size={16} className="text-text-secondary" />
@@ -94,7 +94,7 @@ const JobInfoPanel = ({ job }) => {
               </div>
             </div>
           </div>
-        ))}
+        )) : null}
       </div>
       {/* Quick Stats */}
       <div className="mt-6 pt-4 border-t border-border">

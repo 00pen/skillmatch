@@ -19,7 +19,7 @@ export const useJobs = (filters = {}) => {
         }
         
         // Transform data to match component expectations
-        const transformedJobs = data?.map(job => ({
+        const transformedJobs = data && Array.isArray(data) ? data.map(job => ({
           ...job,
           company: {
             name: job.companies?.name,
@@ -28,8 +28,8 @@ export const useJobs = (filters = {}) => {
             size: job.companies?.size,
             description: job.companies?.description
           },
-          requiredSkills: job.skills_required || [],
-          skills: job.skills_required || [], // Keep both for backward compatibility
+          requiredSkills: Array.isArray(job.skills_required) ? job.skills_required : [],
+          skills: Array.isArray(job.skills_required) ? job.skills_required : [], // Keep both for backward compatibility
           salaryRange: {
             min: job.salary_min,
             max: job.salary_max
@@ -40,7 +40,7 @@ export const useJobs = (filters = {}) => {
           postedDate: job.created_at,
           applicantCount: job.application_count || 0,
           viewCount: job.view_count || 0
-        })) || [];
+        })) : [];
         
         setJobs(transformedJobs);
       } catch (err) {
@@ -70,7 +70,7 @@ export const useJobs = (filters = {}) => {
           throw fetchError;
         }
         
-        const transformedJobs = data?.map(job => ({
+        const transformedJobs = data && Array.isArray(data) ? data.map(job => ({
           ...job,
           company: {
             name: job.companies?.name,
@@ -79,7 +79,7 @@ export const useJobs = (filters = {}) => {
             size: job.companies?.size,
             description: job.companies?.description
           },
-          skills: job.skills || [],
+          skills: Array.isArray(job.skills) ? job.skills : [],
           salaryRange: {
             min: job.salary_min,
             max: job.salary_max
@@ -90,7 +90,7 @@ export const useJobs = (filters = {}) => {
           postedDate: job.created_at,
           applicantCount: job.application_count || 0,
           viewCount: job.view_count || 0
-        })) || [];
+        })) : [];
         
         setJobs(transformedJobs);
       } catch (err) {
@@ -146,8 +146,8 @@ export const useJob = (jobId) => {
             founded: data.companies?.founded,
             headquarters: data.companies?.headquarters
           },
-          requiredSkills: data.skills_required || [],
-          preferredSkills: data.preferredSkills || [],
+          requiredSkills: Array.isArray(data.skills_required) ? data.skills_required : [],
+          preferredSkills: Array.isArray(data.preferredSkills) ? data.preferredSkills : [],
           salaryRange: {
             min: data.salary_min,
             max: data.salary_max
