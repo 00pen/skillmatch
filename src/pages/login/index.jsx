@@ -65,12 +65,9 @@ const Login = () => {
       if (from !== '/') {
         navigate(from);
       } else {
-        // Navigate based on user role
-        const userProfile = data.user?.user_metadata;
-        const dashboardRoute = userProfile?.role === 'job-seeker' 
-          ? '/job-seeker-dashboard' 
-          : '/employer-dashboard';
-        navigate(dashboardRoute);
+        // Wait for AuthContext to load the user profile from database
+        // The ProtectedRoute component will handle the redirect based on actual role
+        navigate('/job-seeker-dashboard');
       }
       
     } catch (error) {

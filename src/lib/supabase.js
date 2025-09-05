@@ -634,11 +634,23 @@ export const db = {
   },
 
   // File Upload functionality
-  uploadFile: async (file, bucket, filePath) => {
+  uploadFile: async (file, bucket = 'user-files', filePath) => {
     try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Ensure the file path includes the user ID as the first folder for RLS compliance
+      const userFolder = user.id;
+      const safePath = filePath.startsWith(`${userFolder}/`) 
+        ? filePath 
+        : `${userFolder}/${filePath}`;
+
       const { data, error } = await supabase.storage
         .from(bucket)
-        .upload(filePath, file, {
+        .upload(safePath, file, {
           cacheControl: '3600',
           upsert: true
         });
@@ -648,9 +660,9 @@ export const db = {
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from(bucket)
-        .getPublicUrl(filePath);
+        .getPublicUrl(safePath);
       
-      return { data: { ...data, publicUrl }, error: null };
+      return { data: { ...data, publicUrl, path: safePath }, error: null };
     } catch (err) {
       console.error('File upload error:', err);
       return { data: null, error: err };
