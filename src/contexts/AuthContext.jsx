@@ -251,6 +251,16 @@ export const AuthProvider = ({ children }) => {
           console.error('Profile creation failed:', profileError);
           // Don't throw error for profile creation failure
         }
+        
+        // After registration, reload the profile to get the data created by the trigger
+        if (data.user) {
+          try {
+            console.log('Reloading profile after registration for user:', data.user.id);
+            await loadUserProfile(data.user.id);
+          } catch (loadError) {
+            console.error('Failed to load profile after registration:', loadError);
+          }
+        }
       }
       
       return { data, error };
