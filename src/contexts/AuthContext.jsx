@@ -120,7 +120,7 @@ export const AuthProvider = ({ children }) => {
         const { data: newProfile, error: createError } = await db.createUserProfile(userId, {
           full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'User',
           email: currentUser?.email,
-          role: currentUser?.user_metadata?.role || 'job_seeker'
+          role: currentUser?.user_metadata?.role?.replace('-', '_') || 'job_seeker'
         });
         
         if (createError) {
