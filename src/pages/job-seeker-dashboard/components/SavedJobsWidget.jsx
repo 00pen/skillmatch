@@ -7,6 +7,7 @@ const SavedJobsWidget = ({ savedJobsCount = 0, recentSavedJobs = [] }) => {
   const navigate = useNavigate();
 
   const handleViewSavedJobs = () => {
+    console.log('Navigating to saved jobs page...');
     navigate('/saved-jobs');
   };
 
@@ -71,9 +72,22 @@ const SavedJobsWidget = ({ savedJobsCount = 0, recentSavedJobs = [] }) => {
           iconName="ArrowRight"
           iconPosition="right"
         >
-          View All Saved Jobs
+          View All Saved Jobs ({savedJobsCount})
         </Button>
       )}
+      
+      {/* Debug: Always show button for testing */}
+      <Button
+        variant="outline"
+        size="sm"
+        fullWidth
+        onClick={handleViewSavedJobs}
+        iconName="ArrowRight"
+        iconPosition="right"
+        className="mt-2"
+      >
+        Go to Saved Jobs (Debug)
+      </Button>
     </div>
   );
 };
