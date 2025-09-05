@@ -109,7 +109,7 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
         {/* Mobile salary display - show on mobile only */}
         <div className="flex sm:hidden items-center justify-between mt-2">
           <div className="text-sm font-semibold text-text-primary truncate flex-1 mr-2">
-            {formatSalary(job?.salary?.min, job?.salary?.max)}
+            {formatSalary(job?.salaryRange?.min, job?.salaryRange?.max)}
           </div>
           <div className="flex items-center space-x-1 flex-shrink-0">
             {userRole === 'job-seeker' && (
@@ -139,7 +139,7 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
       <div className="hidden sm:block">
         <div className="flex items-center justify-between mb-4">
           <div className="text-lg font-semibold text-text-primary">
-            {formatSalary(job?.salary?.min, job?.salary?.max)}
+            {formatSalary(job?.salaryRange?.min, job?.salaryRange?.max)}
           </div>
           
           <div className="flex items-center space-x-2">
@@ -198,7 +198,7 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
         </p>
         
         <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-0">
-          {job?.skills?.slice(0, 3)?.map((skill, index) => (
+          {job?.requiredSkills?.slice(0, 3)?.map((skill, index) => (
             <span
               key={index}
               className="px-2 py-1 bg-accent text-accent-foreground text-xs rounded-md font-medium"
@@ -206,9 +206,9 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
               {skill}
             </span>
           ))}
-          {job?.skills?.length > 3 && (
+          {job?.requiredSkills?.length > 3 && (
             <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-md">
-              +{job?.skills?.length - 3} more
+              +{job?.requiredSkills?.length - 3} more
             </span>
           )}
         </div>

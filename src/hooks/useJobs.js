@@ -28,7 +28,8 @@ export const useJobs = (filters = {}) => {
             size: job.companies?.size,
             description: job.companies?.description
           },
-          skills: job.skills || [],
+          requiredSkills: job.skills_required || [],
+          skills: job.skills_required || [], // Keep both for backward compatibility
           salaryRange: {
             min: job.salary_min,
             max: job.salary_max
@@ -145,7 +146,7 @@ export const useJob = (jobId) => {
             founded: data.companies?.founded,
             headquarters: data.companies?.headquarters
           },
-          requiredSkills: data.requiredSkills || [],
+          requiredSkills: data.skills_required || [],
           preferredSkills: data.preferredSkills || [],
           salaryRange: {
             min: data.salary_min,
