@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { db } from '../../lib/supabase';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import Input from '../../components/ui/Input';
@@ -61,6 +62,7 @@ const Profile = () => {
   
   const [resumeFile, setResumeFile] = useState(null);
   const [coverLetterFile, setCoverLetterFile] = useState(null);
+  const [portfolioFile, setPortfolioFile] = useState(null);
   const [activeTab, setActiveTab] = useState('basic');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -215,27 +217,97 @@ const Profile = () => {
       // Create a unique file name
       const fileExt = file.name.split('.').pop();
       const fileName = `${type}_${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
       
-      // Simulate file upload and store metadata
-      // In production, you'd upload to actual storage service
-      const fileUrl = `/uploads/user-files/${user.id}/${fileName}`;
+      // Determine the appropriate bucket based on file type
+      let bucket;
+      if (type === 'resume') {
+        bucket = 'user-resumes';
+      } else if (type === 'cover_letter') {
+        bucket = 'user-resumes'; // Store cover letters in the same bucket as resumes
+      } else if (type === 'portfolio') {
+        bucket = 'user-portfolios';
+      } else {
+        bucket = 'user-files'; // Default bucket
+      }
       
-      // Store file reference (in production, this would be actual file upload)
+      // Upload file to Supabase storage
+      const { data: uploadData, error: uploadError } = await db.uploadFile(file, bucket, filePath);
+      
+      if (uploadError) {
+        console.error('File upload error:', uploadError);
+        setErrors({ submit: `Failed to upload file: ${uploadError.message}` });
+        return;
+      }
+      
+      // Get the public URL
+      const fileUrl = uploadData.publicUrl;
+      
+      // Store file reference
       if (type === 'resume') {
         setResumeFile(file);
         handleInputChange('resume_url', fileUrl);
       } else if (type === 'cover_letter') {
         setCoverLetterFile(file);
         handleInputChange('cover_letter_url', fileUrl);
+      } else if (type === 'portfolio') {
+        setPortfolioFile(file);
+        handleInputChange('portfolio_url', fileUrl);
       }
       
-      console.log(`File uploaded successfully: ${fileName}`);
+      console.log(`File uploaded successfully: ${fileName}`, { fileUrl, bucket });
+      
+      // Show success message
+      setSuccessMessage(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully!`);
+      setTimeout(() => setSuccessMessage(''), 3000);
       
     } catch (error) {
       console.error('File upload error:', error);
       setErrors({ submit: 'Failed to upload file. Please try again.' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleFileRemove = async (type) => {
+    try {
+      // Get current file URL from form data
+      let currentFileUrl;
+      if (type === 'resume') {
+        currentFileUrl = formData.resume_url;
+      } else if (type === 'cover_letter') {
+        currentFileUrl = formData.cover_letter_url;
+      } else if (type === 'portfolio') {
+        currentFileUrl = formData.portfolio_url;
+      }
+
+      if (currentFileUrl) {
+        // Extract file path from URL
+        const urlParts = currentFileUrl.split('/');
+        const bucket = urlParts[3]; // Extract bucket name from URL
+        const filePath = urlParts.slice(4).join('/'); // Extract file path
+        
+        // Delete file from storage
+        const { error: deleteError } = await db.deleteFile(bucket, filePath);
+        if (deleteError) {
+          console.error('File deletion error:', deleteError);
+        }
+      }
+
+      // Clear file state and form data
+      if (type === 'resume') {
+        setResumeFile(null);
+        handleInputChange('resume_url', '');
+      } else if (type === 'cover_letter') {
+        setCoverLetterFile(null);
+        handleInputChange('cover_letter_url', '');
+      } else if (type === 'portfolio') {
+        setPortfolioFile(null);
+        handleInputChange('portfolio_url', '');
+      }
+      
+    } catch (error) {
+      console.error('File removal error:', error);
     }
   };
 
@@ -555,14 +627,28 @@ const Profile = () => {
                           error={errors.github_url}
                         />
                         
-                        <Input
-                          label="Portfolio URL"
-                          type="url"
-                          placeholder="https://your-portfolio.com"
-                          value={formData.portfolio_url}
-                          onChange={(e) => handleInputChange('portfolio_url', e.target.value)}
-                          error={errors.portfolio_url}
-                        />
+                        <div className="space-y-4">
+                          <Input
+                            label="Portfolio URL"
+                            type="url"
+                            placeholder="https://your-portfolio.com"
+                            value={formData.portfolio_url}
+                            onChange={(e) => handleInputChange('portfolio_url', e.target.value)}
+                            error={errors.portfolio_url}
+                          />
+                          
+                          <div className="text-sm text-text-secondary">
+                            <p className="mb-2">Or upload portfolio files:</p>
+                            <FileUpload
+                              label="Portfolio Files"
+                              description="Upload your portfolio files (PDF, images, ZIP)"
+                              acceptedFileTypes=".pdf,.jpg,.jpeg,.png,.gif,.zip"
+                              currentFile={portfolioFile}
+                              onFileSelect={(file) => file ? handleFileUpload(file, 'portfolio') : handleFileRemove('portfolio')}
+                              maxFileSize={50 * 1024 * 1024} // 50MB
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1031,7 +1117,7 @@ const Profile = () => {
                         description="Upload your resume or CV (PDF, DOC, DOCX)"
                         acceptedFileTypes=".pdf,.doc,.docx"
                         currentFile={resumeFile}
-                        onFileSelect={(file) => handleFileUpload(file, 'resume')}
+                        onFileSelect={(file) => file ? handleFileUpload(file, 'resume') : handleFileRemove('resume')}
                         required
                       />
                       
@@ -1040,7 +1126,7 @@ const Profile = () => {
                         description="Upload your cover letter (PDF, DOC, DOCX)"
                         acceptedFileTypes=".pdf,.doc,.docx"
                         currentFile={coverLetterFile}
-                        onFileSelect={(file) => handleFileUpload(file, 'cover_letter')}
+                        onFileSelect={(file) => file ? handleFileUpload(file, 'cover_letter') : handleFileRemove('cover_letter')}
                       />
                     </div>
                   </div>
