@@ -29,6 +29,11 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
 
   // Check role-based access only if we have a complete user profile
   if (requiredRole && userProfile && userProfile.role !== requiredRole) {
+    console.log('ProtectedRoute: Role mismatch', { 
+      requiredRole, 
+      userRole: userProfile.role, 
+      currentPath: location.pathname 
+    });
     // Redirect to appropriate dashboard based on user's actual role
     const dashboardRoute = userProfile.role === 'employer' ? '/employer-dashboard' : '/job-seeker-dashboard';
     // Prevent redirecting to the same route to avoid infinite loops

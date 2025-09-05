@@ -8,7 +8,13 @@ const SavedJobsWidget = ({ savedJobsCount = 0, recentSavedJobs = [] }) => {
 
   const handleViewSavedJobs = () => {
     console.log('Navigating to saved jobs page...');
-    navigate('/saved-jobs');
+    console.log('Current location:', window.location.pathname);
+    try {
+      navigate('/saved-jobs');
+      console.log('Navigate called successfully');
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
   };
 
   const handleJobClick = (jobId) => {

@@ -10,6 +10,7 @@ import Button from '../../components/ui/Button';
 import QuickApplyModal from '../../components/modals/QuickApplyModal';
 
 const SavedJobs = () => {
+  console.log('SavedJobs component mounted');
   const navigate = useNavigate();
   const { user } = useAuth();
   const { savedJobs, savedJobIds, toggleSaveJob, isLoading, error } = useSavedJobs();
