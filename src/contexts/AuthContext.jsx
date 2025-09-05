@@ -177,6 +177,8 @@ export const AuthProvider = ({ children }) => {
       console.log('Signing up user with data:', { email, userData, metadata });
       const { data, error } = await auth.signUp(email, password, metadata);
       
+      console.log('Raw signup response:', { data, error });
+      
       if (error) {
         console.error('Auth signup error:', error);
         throw error;
@@ -198,7 +200,10 @@ export const AuthProvider = ({ children }) => {
           
           console.log('Creating user profile with data:', { userId: data.user.id, profileData });
           
-          // First try to get existing profile (created by trigger)
+          // Wait a moment for trigger to potentially create profile
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check if profile was created by trigger
           const { data: existingProfile, error: getError } = await db.getUserProfile(data.user.id);
           
           if (getError && getError.code !== 'PGRST116') {
@@ -208,7 +213,7 @@ export const AuthProvider = ({ children }) => {
           let profileResult;
           if (existingProfile) {
             // Update existing profile with full data
-            console.log('Updating existing profile with full data');
+            console.log('Profile exists from trigger, updating with full data:', existingProfile);
             const { data: updateResult, error: updateError } = await db.updateUserProfile(data.user.id, profileData);
             if (updateError) {
               console.error('Error updating user profile:', updateError);
@@ -217,10 +222,26 @@ export const AuthProvider = ({ children }) => {
               console.log('User profile updated successfully:', profileResult);
             }
           } else {
-            // Create new profile
-            const { data: createResult, error: createError } = await db.createUserProfile(data.user.id, profileData);
+            // Create new profile manually (trigger didn't work)
+            console.log('No profile found, creating manually');
+            const { data: createResult, error: createError } = await db.createUserProfile(data.user.id, {
+              ...profileData,
+              email: data.user.email
+            });
             if (createError) {
               console.error('Error creating user profile:', createError);
+              // Try one more time with minimal data
+              const { data: retryResult, error: retryError } = await db.createUserProfile(data.user.id, {
+                full_name: userData.fullName || data.user.email?.split('@')[0] || 'User',
+                email: data.user.email,
+                role: userData.role?.replace('-', '_') || 'job_seeker'
+              });
+              if (retryError) {
+                console.error('Retry profile creation failed:', retryError);
+              } else {
+                profileResult = retryResult;
+                console.log('User profile created on retry:', profileResult);
+              }
             } else {
               profileResult = createResult;
               console.log('User profile created successfully:', profileResult);
