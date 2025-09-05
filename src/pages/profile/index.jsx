@@ -516,11 +516,11 @@ const Profile = () => {
                       <div className="flex-1">
                         <FileUpload
                           label="Upload Profile Picture"
-                          accept="image/*"
-                          maxSize={5}
+                          acceptedFileTypes=".jpg,.jpeg,.png,.gif,.webp,.svg"
+                          maxFileSize={5 * 1024 * 1024}
                           onFileSelect={(file) => handleFileUpload(file, 'profile_picture')}
                           currentFile={profilePictureFile}
-                          helperText="Upload a profile picture (JPG, PNG, max 5MB)"
+                          helperText="Upload a profile picture (JPG, PNG, GIF, WebP, SVG - max 5MB)"
                         />
                       </div>
                     </div>
