@@ -4,6 +4,7 @@ import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ui/ProtectedRoute";
+import PageTransition from "./components/ui/PageTransition";
 import NotFound from "pages/NotFound";
 import Landing from './pages/Landing';
 import JobSeekerDashboard from './pages/job-seeker-dashboard';
@@ -27,68 +28,106 @@ const Routes = () => {
           <ScrollToTop />
           <RouterRoutes>
             {/* Public routes */}
-            <Route path="/" element={<Landing />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/" element={
+              <PageTransition>
+                <Landing />
+              </PageTransition>
+            } />
+            <Route path="/register" element={
+              <PageTransition>
+                <Register />
+              </PageTransition>
+            } />
+            <Route path="/login" element={
+              <PageTransition>
+                <Login />
+              </PageTransition>
+            } />
             
             {/* Protected routes */}
             <Route path="/job-seeker-dashboard" element={
               <ProtectedRoute requiredRole="job-seeker">
-                <JobSeekerDashboard />
+                <PageTransition>
+                  <JobSeekerDashboard />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/employer-dashboard" element={
               <ProtectedRoute requiredRole="employer">
-                <EmployerDashboard />
+                <PageTransition>
+                  <EmployerDashboard />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/job-details/:id" element={
               <ProtectedRoute>
-                <JobDetails />
+                <PageTransition>
+                  <JobDetails />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/job-details" element={
               <ProtectedRoute>
-                <JobDetails />
+                <PageTransition>
+                  <JobDetails />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/job-search-results" element={
               <ProtectedRoute>
-                <JobSearchResults />
+                <PageTransition>
+                  <JobSearchResults />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/application-tracking" element={
               <ProtectedRoute>
-                <ApplicationTracking />
+                <PageTransition>
+                  <ApplicationTracking />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
               <ProtectedRoute>
-                <Profile />
+                <PageTransition>
+                  <Profile />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/create-job" element={
               <ProtectedRoute requiredRole="employer">
-                <JobPosting />
+                <PageTransition>
+                  <JobPosting />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/candidates" element={
               <ProtectedRoute requiredRole="employer">
-                <CandidateBrowsing />
+                <PageTransition>
+                  <CandidateBrowsing />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/candidate/:id" element={
               <ProtectedRoute requiredRole="employer">
-                <CandidateDetails />
+                <PageTransition>
+                  <CandidateDetails />
+                </PageTransition>
               </ProtectedRoute>
             } />
             <Route path="/company/:id" element={
               <ProtectedRoute>
-                <CompanyDetails />
+                <PageTransition>
+                  <CompanyDetails />
+                </PageTransition>
               </ProtectedRoute>
             } />
             
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={
+              <PageTransition>
+                <NotFound />
+              </PageTransition>
+            } />
           </RouterRoutes>
         </ErrorBoundary>
       </AuthProvider>
