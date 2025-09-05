@@ -197,9 +197,9 @@ const JobDetails = () => {
     <div className="min-h-screen bg-background">
       <RoleAdaptiveNavbar />
       <div className="pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
           {/* Breadcrumbs */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <JobSearchBreadcrumbs 
               jobTitle={job?.title} 
               companyName={job?.company?.name} 
@@ -207,20 +207,20 @@ const JobDetails = () => {
           </div>
 
           {/* Back Button */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <Button
               variant="ghost"
               onClick={handleBackToSearch}
               iconName="ArrowLeft"
               iconPosition="left"
-              className="text-text-secondary hover:text-text-primary"
+              className="text-text-secondary hover:text-text-primary text-sm sm:text-base"
             >
               Back to Search Results
             </Button>
           </div>
 
           {/* Job Header */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <JobHeader
               job={job}
               onApply={handleApply}
@@ -231,27 +231,27 @@ const JobDetails = () => {
           </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Left Column - Job Description */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               <JobDescription job={job} />
             </div>
 
             {/* Right Column - Job Info & Related Jobs */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <JobInfoPanel job={job} />
               <RelatedJobs jobs={relatedJobs} currentJobId={job?.id} />
             </div>
           </div>
 
           {/* Sticky Apply Button for Mobile */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border lg:hidden z-40">
-            <div className="flex gap-3">
+          <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-background border-t border-border lg:hidden z-40">
+            <div className="flex gap-2 sm:gap-3">
               <Button
                 variant="outline"
                 onClick={handleSave}
                 iconName={isSaved ? "Heart" : "Heart"}
-                className={isSaved ? "text-error border-error" : ""}
+                className={`${isSaved ? "text-error border-error" : ""} text-xs sm:text-sm px-3 py-2`}
               >
                 {isSaved ? 'Saved' : 'Save'}
               </Button>
@@ -261,6 +261,7 @@ const JobDetails = () => {
                 iconName="Send"
                 iconPosition="right"
                 fullWidth
+                className="text-sm sm:text-base"
               >
                 Apply Now
               </Button>

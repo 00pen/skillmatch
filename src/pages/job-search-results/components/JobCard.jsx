@@ -61,12 +61,12 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
 
   return (
     <div 
-      className="bg-card border border-border rounded-lg p-4 sm:p-6 hover:shadow-card transition-shadow duration-150 group cursor-pointer"
+      className="bg-card border border-border rounded-lg p-3 sm:p-4 lg:p-6 hover:shadow-card transition-shadow duration-150 group cursor-pointer"
       onClick={handleViewDetails}
     >
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-3 sm:space-y-0">
-        <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+        <div className="flex items-start space-x-2 sm:space-x-3 lg:space-x-4 flex-1 min-w-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
             <Image
               src={job?.company?.logo}
               alt={`${job?.company?.name} logo`}
@@ -75,31 +75,31 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-1 group-hover:text-secondary transition-colors duration-150 line-clamp-2">
+            <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-text-primary mb-1 group-hover:text-secondary transition-colors duration-150 line-clamp-2">
               {job?.title}
             </h3>
-            <p className="text-sm sm:text-base text-text-secondary font-medium mb-2">{job?.company?.name}</p>
+            <p className="text-xs sm:text-sm lg:text-base text-text-secondary font-medium mb-2 truncate">{job?.company?.name}</p>
             
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-text-secondary mb-3">
-              <div className="flex items-center space-x-1">
-                <Icon name="MapPin" size={12} className="sm:w-[14px] sm:h-[14px]" />
-                <span className="truncate max-w-[120px] sm:max-w-none">{job?.location}</span>
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2 lg:gap-4 text-xs sm:text-sm text-text-secondary mb-2 sm:mb-3">
+              <div className="flex items-center space-x-1 min-w-0">
+                <Icon name="MapPin" size={10} className="sm:w-[12px] sm:h-[12px] lg:w-[14px] lg:h-[14px] flex-shrink-0" />
+                <span className="truncate max-w-[100px] sm:max-w-[120px] lg:max-w-none">{job?.location}</span>
               </div>
               
               <div className="flex items-center space-x-1">
-                <Icon name="Clock" size={12} className="sm:w-[14px] sm:h-[14px]" />
-                <span>{getTimeAgo(job?.postedDate)}</span>
+                <Icon name="Clock" size={10} className="sm:w-[12px] sm:h-[12px] lg:w-[14px] lg:h-[14px] flex-shrink-0" />
+                <span className="whitespace-nowrap">{getTimeAgo(job?.postedDate)}</span>
               </div>
               
               <div className="flex items-center space-x-1">
-                <Icon name="Briefcase" size={12} className="sm:w-[14px] sm:h-[14px]" />
-                <span className="capitalize">{job?.type}</span>
+                <Icon name="Briefcase" size={10} className="sm:w-[12px] sm:h-[12px] lg:w-[14px] lg:h-[14px] flex-shrink-0" />
+                <span className="capitalize whitespace-nowrap">{job?.type}</span>
               </div>
               
               {job?.remote && (
                 <div className="flex items-center space-x-1">
-                  <Icon name="Wifi" size={12} className="sm:w-[14px] sm:h-[14px]" />
-                  <span>Remote</span>
+                  <Icon name="Wifi" size={10} className="sm:w-[12px] sm:h-[12px] lg:w-[14px] lg:h-[14px] flex-shrink-0" />
+                  <span className="whitespace-nowrap">Remote</span>
                 </div>
               )}
             </div>
@@ -107,8 +107,8 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
         </div>
         
         {/* Mobile salary display - show on mobile only */}
-        <div className="flex sm:hidden items-center justify-between mt-2">
-          <div className="text-sm font-semibold text-text-primary truncate flex-1 mr-2">
+        <div className="flex sm:hidden items-center justify-between mt-1">
+          <div className="text-xs font-semibold text-text-primary truncate flex-1 mr-2 min-w-0">
             {formatSalary(job?.salaryRange?.min, job?.salaryRange?.max)}
           </div>
           <div className="flex items-center space-x-1 flex-shrink-0">
@@ -121,12 +121,12 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
                   handleSaveJob(e);
                 }}
                 loading={isLoading}
-                className="text-text-secondary hover:text-secondary p-1.5 min-w-[32px] h-8"
+                className="text-text-secondary hover:text-secondary p-1 min-w-[28px] h-7"
                 title={isSaved ? "Remove from saved jobs" : "Save job"}
               >
                 <Icon 
                   name={isSaved ? "Heart" : "Heart"} 
-                  size={14}
+                  size={12}
                   className={isSaved ? "fill-current text-secondary" : ""}
                 />
               </Button>
@@ -192,29 +192,29 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
       </div>
       
       {/* Description and Skills */}
-      <div className="border-t border-border pt-3 sm:pt-4">
-        <p className="text-text-secondary text-xs sm:text-sm line-clamp-2 mb-3">
+      <div className="border-t border-border pt-2 sm:pt-3 lg:pt-4">
+        <p className="text-text-secondary text-xs sm:text-sm line-clamp-2 mb-2 sm:mb-3">
           {job?.description}
         </p>
         
-        <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-0">
-          {job?.requiredSkills?.slice(0, 3)?.map((skill, index) => (
+        <div className="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-3 lg:mb-0">
+          {job?.requiredSkills && Array.isArray(job.requiredSkills) ? job.requiredSkills.slice(0, 3).map((skill, index) => (
             <span
               key={index}
-              className="px-2 py-1 bg-accent text-accent-foreground text-xs rounded-md font-medium"
+              className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-accent text-accent-foreground text-xs rounded-md font-medium truncate"
             >
               {skill}
             </span>
-          ))}
-          {job?.requiredSkills?.length > 3 && (
-            <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-md">
-              +{job?.requiredSkills?.length - 3} more
+          )) : null}
+          {job?.requiredSkills && Array.isArray(job.requiredSkills) && job.requiredSkills.length > 3 && (
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-muted text-muted-foreground text-xs rounded-md">
+              +{job.requiredSkills.length - 3} more
             </span>
           )}
         </div>
         
         {/* Mobile action buttons */}
-        <div className="flex sm:hidden space-x-2 mt-3">
+        <div className="flex sm:hidden space-x-1.5 sm:space-x-2 mt-2 sm:mt-3">
           {userRole === 'job-seeker' && (
             <Button
               variant="secondary"
@@ -225,9 +225,9 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
               }}
               loading={isApplying}
               iconName="Send"
-              iconSize={12}
+              iconSize={10}
               iconPosition="left"
-              className="flex-1 text-xs px-3 py-2 h-8 min-h-[2rem] whitespace-nowrap overflow-hidden"
+              className="flex-1 text-xs px-2 py-1.5 h-7 min-h-[1.75rem] whitespace-nowrap overflow-hidden"
             >
               {isApplying ? 'Applying...' : 'Apply'}
             </Button>
@@ -241,9 +241,9 @@ const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'jo
               handleViewDetails(e);
             }}
             iconName="ExternalLink"
-            iconSize={12}
+            iconSize={10}
             iconPosition="right"
-            className="flex-1 text-xs px-3 py-2 h-8 min-h-[2rem] whitespace-nowrap overflow-hidden"
+            className="flex-1 text-xs px-2 py-1.5 h-7 min-h-[1.75rem] whitespace-nowrap overflow-hidden"
           >
             Details
           </Button>

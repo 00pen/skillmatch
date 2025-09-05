@@ -210,33 +210,34 @@ const JobSearchResults = () => {
     <div className="min-h-screen bg-background">
       <RoleAdaptiveNavbar />
       <div className="pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <NavigationBreadcrumbs className="mb-6" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
+          <NavigationBreadcrumbs className="mb-4 sm:mb-6" />
           
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-text-primary mb-2">Find Your Next Opportunity</h1>
-            <p className="text-text-secondary">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2 line-clamp-2">Find Your Next Opportunity</h1>
+            <p className="text-sm sm:text-base text-text-secondary">
               Discover jobs that match your skills and career goals
             </p>
           </div>
 
           {/* Mobile Filter Toggle */}
-          <div className="lg:hidden mb-4">
+          <div className="lg:hidden mb-3 sm:mb-4">
             <Button
               variant="outline"
               onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
               iconName="Filter"
-              iconSize={16}
+              iconSize={14}
               fullWidth
+              className="text-sm"
             >
               {isMobileFiltersOpen ? 'Hide Filters' : 'Show Filters'}
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {/* Filters Sidebar */}
             <div className={`lg:col-span-1 ${isMobileFiltersOpen ? 'block' : 'hidden lg:block'}`}>
-              <div className="sticky top-24">
+              <div className="sticky top-20 sm:top-24">
                 <SearchFilters
                   filters={filters}
                   onFiltersChange={handleFiltersChange}
@@ -247,7 +248,7 @@ const JobSearchResults = () => {
             </div>
 
             {/* Main Content */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 min-w-0">
               <SortControls
                 sortBy={sortBy}
                 onSortChange={setSortBy}

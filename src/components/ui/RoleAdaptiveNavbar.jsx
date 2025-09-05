@@ -75,53 +75,53 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-1000 bg-background border-b border-border ${className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
+        <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
-          <div className="flex-shrink-0 flex items-center">
+          <div className="flex-shrink-0 flex items-center min-w-0">
             <button
               onClick={() => handleNavigation('/')}
-              className="flex items-center space-x-2 hover:opacity-80 transition-opacity duration-150 cursor-pointer"
+              className="flex items-center space-x-1 sm:space-x-2 hover:opacity-80 transition-opacity duration-150 cursor-pointer min-w-0"
             >
-              <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center">
-                <Icon name="Zap" size={20} color="white" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon name="Zap" size={16} className="sm:w-5 sm:h-5" color="white" />
               </div>
-              <span className="text-xl font-bold text-primary">SkillMatch</span>
+              <span className="text-lg sm:text-xl font-bold text-primary truncate">SkillMatch</span>
             </button>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
-              {navigationItems?.map((item) => (
+            <div className="ml-6 lg:ml-10 flex items-baseline space-x-4 lg:space-x-6 xl:space-x-8">
+              {navigationItems && Array.isArray(navigationItems) ? navigationItems.map((item) => (
                 <button
                   key={item?.path}
                   onClick={() => handleNavigation(item?.path)}
-                  className={`nav-item px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 flex items-center space-x-2 ${
+                  className={`nav-item px-2 lg:px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 flex items-center space-x-1 lg:space-x-2 whitespace-nowrap ${
                     isActiveRoute(item?.path)
                       ? 'text-secondary bg-accent' : 'text-text-primary hover:text-secondary hover:bg-muted'
                   }`}
                 >
-                  <Icon name={item?.icon} size={16} />
-                  <span>{item?.label}</span>
+                  <Icon name={item?.icon} size={14} className="lg:w-4 lg:h-4" />
+                  <span className="hidden lg:inline">{item?.label}</span>
                 </button>
-              ))}
+              )) : null}
             </div>
           </div>
 
           {/* Desktop User Menu */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <Icon name="User" size={16} color="var(--color-text-secondary)" />
+              <div className="flex items-center space-x-2 lg:space-x-4">
+                <div className="flex items-center space-x-1 lg:space-x-2 min-w-0">
+                  <div className="w-6 h-6 lg:w-8 lg:h-8 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                    <Icon name="User" size={14} className="lg:w-4 lg:h-4" color="var(--color-text-secondary)" />
                   </div>
-                  <div className="text-sm">
-                    <div className="font-medium text-text-primary">
+                  <div className="text-xs lg:text-sm min-w-0">
+                    <div className="font-medium text-text-primary truncate">
                       {userProfile?.full_name || (user?.email ? user.email.split('@')[0] : 'User')}
                     </div>
-                    <div className="text-text-secondary capitalize">
+                    <div className="text-text-secondary capitalize truncate">
                       {userProfile?.role?.replace('_', ' ').replace('-', ' ') || 'User'}
                     </div>
                   </div>
@@ -131,26 +131,29 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                   size="sm"
                   onClick={handleLogout}
                   iconName="LogOut"
-                  iconSize={16}
+                  iconSize={14}
+                  className="text-xs lg:text-sm px-2 lg:px-3"
                 >
-                  Logout
+                  <span className="hidden lg:inline">Logout</span>
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 lg:space-x-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleNavigation('/login')}
+                  className="text-xs lg:text-sm px-2 lg:px-3"
                 >
-                  Login
+                  <span className="hidden lg:inline">Login</span>
                 </Button>
                 <Button
                   variant="default"
                   size="sm"
                   onClick={() => handleNavigation('/register')}
+                  className="text-xs lg:text-sm px-2 lg:px-3"
                 >
-                  Register
+                  <span className="hidden lg:inline">Register</span>
                 </Button>
               </div>
             )}
