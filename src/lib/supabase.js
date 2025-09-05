@@ -642,15 +642,11 @@ export const db = {
         throw new Error('User not authenticated');
       }
 
-      // Ensure the file path includes the user ID as the first folder for RLS compliance
-      const userFolder = user.id;
-      const safePath = filePath.startsWith(`${userFolder}/`) 
-        ? filePath 
-        : `${userFolder}/${filePath}`;
-
+      // The filePath is already constructed with the user ID in the calling component (e.g., Profile page)
+      // Using it directly ensures RLS compliance without duplicating the user ID.
       const { data, error } = await supabase.storage
         .from(bucket)
-        .upload(safePath, file, {
+        .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
         });
@@ -660,9 +656,9 @@ export const db = {
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from(bucket)
-        .getPublicUrl(safePath);
+        .getPublicUrl(filePath);
       
-      return { data: { ...data, publicUrl, path: safePath }, error: null };
+      return { data: { ...data, publicUrl, path: filePath }, error: null };
     } catch (err) {
       console.error('File upload error:', err);
       return { data: null, error: err };
