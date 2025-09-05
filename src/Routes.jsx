@@ -47,7 +47,7 @@ const Routes = () => {
             
             {/* Protected routes */}
             <Route path="/job-seeker-dashboard" element={
-              <ProtectedRoute requiredRole="job-seeker">
+              <ProtectedRoute requiredRole="job_seeker">
                 <PageTransition>
                   <JobSeekerDashboard />
                 </PageTransition>
@@ -124,7 +124,7 @@ const Routes = () => {
               </ProtectedRoute>
             } />
             <Route path="/saved-jobs" element={
-              <ProtectedRoute requiredRole="job-seeker">
+              <ProtectedRoute requiredRole="job_seeker">
                 <PageTransition>
                   <SavedJobs />
                 </PageTransition>
