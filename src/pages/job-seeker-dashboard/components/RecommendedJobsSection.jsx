@@ -115,107 +115,105 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
               className="border border-border rounded-lg p-4 hover:shadow-card hover:border-secondary/20 transition-all duration-150 cursor-pointer"
               onClick={() => handleJobClick(job?.id)}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4 flex-1">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    <Image
-                      src={job?.companyLogo}
-                      alt={`${job?.company} logo`}
-                      className="w-full h-full object-cover"
-                    />
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                  <Image
+                    src={job?.companyLogo}
+                    alt={`${job?.company} logo`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h3 className="text-base sm:text-lg font-semibold text-text-primary hover:text-secondary transition-colors duration-150 line-clamp-2 break-words">
+                        {job?.title}
+                      </h3>
+                      <p className="text-sm text-text-secondary font-medium truncate">
+                        {job?.company}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => handleSaveJob(e, job?.id)}
+                      className="p-1.5 hover:bg-muted rounded-lg transition-colors duration-150 flex-shrink-0"
+                    >
+                      <Icon 
+                        name={savedJobIds?.has(job?.id) ? "BookmarkCheck" : "Bookmark"} 
+                        size={14} 
+                        className={savedJobIds?.has(job?.id) ? "text-secondary" : "text-text-secondary hover:text-secondary"} 
+                      />
+                    </button>
                   </div>
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0 pr-2">
-                        <h3 className="text-lg font-semibold text-text-primary hover:text-secondary transition-colors duration-150 line-clamp-2 break-words">
-                          {job?.title}
-                        </h3>
-                        <p className="text-text-secondary font-medium truncate">
-                          {job?.company}
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => handleSaveJob(e, job?.id)}
-                        className="p-2 hover:bg-muted rounded-lg transition-colors duration-150"
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 text-xs sm:text-sm text-text-secondary mb-3">
+                    <div className="flex items-center space-x-1 min-w-0">
+                      <Icon name="MapPin" size={12} className="flex-shrink-0" />
+                      <span className="truncate">{job?.location}</span>
+                    </div>
+                    <div className="flex items-center space-x-1 min-w-0">
+                      <Icon name="DollarSign" size={12} className="flex-shrink-0" />
+                      <span className="truncate">{formatSalary(job?.salaryMin, job?.salaryMax)}</span>
+                    </div>
+                    <div className="flex items-center space-x-1 min-w-0">
+                      <Icon name="Clock" size={12} className="flex-shrink-0" />
+                      <span className="capitalize truncate">{job?.type}</span>
+                    </div>
+                    <div className="flex items-center space-x-1 min-w-0">
+                      <Icon name="Calendar" size={12} className="flex-shrink-0" />
+                      <span className="truncate">{getTimeAgo(job?.postedDate)}</span>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs sm:text-sm text-text-primary mb-3 line-clamp-2 break-words">
+                    {job?.description}
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-1 sm:gap-2 mb-3">
+                    {job?.skills?.slice(0, 3)?.map((skill, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-accent text-secondary truncate max-w-[80px] sm:max-w-[100px]"
+                        title={skill}
                       >
-                        <Icon 
-                          name={savedJobIds?.has(job?.id) ? "BookmarkCheck" : "Bookmark"} 
-                          size={16} 
-                          className={savedJobIds?.has(job?.id) ? "text-secondary" : "text-text-secondary hover:text-secondary"} 
-                        />
-                      </button>
-                    </div>
-                    
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-text-secondary mb-3">
-                      <div className="flex items-center space-x-1 min-w-0">
-                        <Icon name="MapPin" size={14} className="flex-shrink-0" />
-                        <span className="truncate max-w-[120px]">{job?.location}</span>
-                      </div>
+                        {skill}
+                      </span>
+                    ))}
+                    {job?.skills?.length > 3 && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-muted text-text-secondary flex-shrink-0">
+                        +{job?.skills?.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                       <div className="flex items-center space-x-1 flex-shrink-0">
-                        <Icon name="DollarSign" size={14} />
-                        <span className="whitespace-nowrap">{formatSalary(job?.salaryMin, job?.salaryMax)}</span>
-                      </div>
-                      <div className="flex items-center space-x-1 flex-shrink-0">
-                        <Icon name="Clock" size={14} />
-                        <span className="capitalize">{job?.type}</span>
-                      </div>
-                      <div className="flex items-center space-x-1 flex-shrink-0">
-                        <Icon name="Calendar" size={14} />
-                        <span>{getTimeAgo(job?.postedDate)}</span>
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-text-primary mb-3 line-clamp-2 break-words">
-                      {job?.description}
-                    </p>
-                    
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {job?.skills?.slice(0, 4)?.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent text-secondary truncate max-w-[100px]"
-                          title={skill}
-                        >
-                          {skill}
+                        <Icon name="Users" size={12} className="text-text-secondary" />
+                        <span className="text-xs text-text-secondary whitespace-nowrap">
+                          {job?.applicants || 0} applicants
                         </span>
-                      ))}
-                      {job?.skills?.length > 4 && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-text-secondary flex-shrink-0">
-                          +{job?.skills?.length - 4} more
-                        </span>
+                      </div>
+                      {job?.matchPercentage && (
+                        <div className="flex items-center space-x-1 flex-shrink-0">
+                          <Icon name="Target" size={12} className="text-success" />
+                          <span className="text-xs text-success font-medium whitespace-nowrap">
+                            {job?.matchPercentage}% match
+                          </span>
+                        </div>
                       )}
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 min-w-0 flex-1">
-                        <div className="flex items-center space-x-1 flex-shrink-0">
-                          <Icon name="Users" size={14} className="text-text-secondary" />
-                          <span className="text-xs text-text-secondary whitespace-nowrap">
-                            {job?.applicants || 0} applicants
-                          </span>
-                        </div>
-                        {job?.matchPercentage && (
-                          <div className="flex items-center space-x-1 flex-shrink-0">
-                            <Icon name="Target" size={14} className="text-success" />
-                            <span className="text-xs text-success font-medium whitespace-nowrap">
-                              {job?.matchPercentage}% match
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={(e) => handleQuickApply(e, job?.id)}
-                        iconName="Send"
-                        iconPosition="left"
-                        className="flex-shrink-0 ml-2"
-                      >
-                        Quick Apply
-                      </Button>
-                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => handleQuickApply(e, job?.id)}
+                      iconName="Send"
+                      iconPosition="left"
+                      className="flex-shrink-0 w-full sm:w-auto text-xs sm:text-sm px-3 py-1.5"
+                    >
+                      Quick Apply
+                    </Button>
                   </div>
                 </div>
               </div>

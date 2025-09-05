@@ -45,10 +45,10 @@ const RelatedJobs = ({ jobs = [], currentJobId }) => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 shadow-card">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-          <Icon name="Briefcase" size={20} />
+    <div className="bg-card border border-border rounded-lg p-3 sm:p-6 shadow-card">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h3 className="text-base sm:text-lg font-semibold text-text-primary flex items-center gap-2">
+          <Icon name="Briefcase" size={16} className="sm:w-5 sm:h-5" />
           Related Jobs
         </h3>
         <Button
@@ -57,19 +57,21 @@ const RelatedJobs = ({ jobs = [], currentJobId }) => {
           onClick={() => navigate('/job-search-results')}
           iconName="ArrowRight"
           iconPosition="right"
+          className="text-xs sm:text-sm"
         >
-          View All
+          <span className="hidden sm:inline">View All</span>
+          <span className="sm:hidden">All</span>
         </Button>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {filteredJobs && Array.isArray(filteredJobs) ? filteredJobs.map((job) => (
           <div
             key={job?.id}
-            className="border border-border rounded-lg p-4 hover:shadow-card transition-shadow duration-150 cursor-pointer"
+            className="border border-border rounded-lg p-3 sm:p-4 hover:shadow-card transition-shadow duration-150 cursor-pointer"
             onClick={() => handleJobClick(job?.id)}
           >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-lg overflow-hidden border border-border flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden border border-border flex-shrink-0">
                 <Image
                   src={job?.company?.logo}
                   alt={`${job?.company?.name} logo`}
@@ -78,40 +80,40 @@ const RelatedJobs = ({ jobs = [], currentJobId }) => {
               </div>
               
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-text-primary mb-1 line-clamp-1">
+                <h4 className="text-sm sm:text-base font-semibold text-text-primary mb-1 line-clamp-1">
                   {job?.title}
                 </h4>
-                <div className="text-sm text-text-secondary mb-2">
+                <div className="text-xs sm:text-sm text-text-secondary mb-2">
                   {job?.company?.name}
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-4 text-xs text-text-secondary mb-2">
-                  <div className="flex items-center gap-1">
-                    <Icon name="MapPin" size={12} />
-                    <span>{job?.location}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-2 text-xs text-text-secondary mb-2">
+                  <div className="flex items-center gap-1 min-w-0">
+                    <Icon name="MapPin" size={10} className="sm:w-3 sm:h-3 flex-shrink-0" />
+                    <span className="truncate">{job?.location}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Icon name="Clock" size={12} />
-                    <span>{formatDate(job?.postedDate)}</span>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <Icon name="Clock" size={10} className="sm:w-3 sm:h-3 flex-shrink-0" />
+                    <span className="truncate">{formatDate(job?.postedDate)}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Icon name="DollarSign" size={12} />
-                    <span>{formatSalary(job?.salaryRange?.min, job?.salaryRange?.max)}</span>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <Icon name="DollarSign" size={10} className="sm:w-3 sm:h-3 flex-shrink-0" />
+                    <span className="truncate">{formatSalary(job?.salaryRange?.min, job?.salaryRange?.max)}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center px-2 py-1 bg-accent rounded-full text-xs font-medium">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                    <span className="inline-flex items-center px-1.5 py-0.5 bg-accent rounded-full text-xs font-medium">
                       {job?.type}
                     </span>
-                    <span className="inline-flex items-center px-2 py-1 bg-muted rounded-full text-xs font-medium">
+                    <span className="inline-flex items-center px-1.5 py-0.5 bg-muted rounded-full text-xs font-medium">
                       {job?.experienceLevel}
                     </span>
                   </div>
                   
                   <div className="flex items-center gap-1 text-xs text-secondary">
-                    <Icon name="TrendingUp" size={12} />
+                    <Icon name="TrendingUp" size={10} className="sm:w-3 sm:h-3" />
                     <span>{job?.matchScore || 85}% match</span>
                   </div>
                 </div>
@@ -120,13 +122,14 @@ const RelatedJobs = ({ jobs = [], currentJobId }) => {
           </div>
         )) : null}
       </div>
-      <div className="mt-6 pt-4 border-t border-border">
+      <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-border">
         <Button
           variant="outline"
           fullWidth
           onClick={() => navigate('/job-search-results')}
           iconName="Search"
           iconPosition="left"
+          className="text-xs sm:text-sm py-2 sm:py-3"
         >
           Explore More Jobs
         </Button>

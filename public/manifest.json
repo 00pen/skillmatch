@@ -38,7 +38,7 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
-  "theme_color": "#6366f1",
+  "theme_color": "#1DBF73",
   "background_color": "#ffffff",
   "categories": ["business", "productivity", "utilities"],
   "lang": "en",

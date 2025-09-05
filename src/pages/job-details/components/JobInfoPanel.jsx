@@ -74,22 +74,22 @@ const JobInfoPanel = ({ job }) => {
   ];
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 shadow-card">
-      <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-        <Icon name="Info" size={20} />
+    <div className="bg-card border border-border rounded-lg p-3 sm:p-6 shadow-card">
+      <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-3 sm:mb-4 flex items-center gap-2">
+        <Icon name="Info" size={16} className="sm:w-5 sm:h-5" />
         Job Information
       </h3>
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {infoItems && Array.isArray(infoItems) ? infoItems.map((item, index) => (
-          <div key={index} className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-              <Icon name={item?.icon} size={16} className="text-text-secondary" />
+          <div key={index} className="flex items-start gap-2 sm:gap-3">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+              <Icon name={item?.icon} size={12} className="sm:w-4 sm:h-4 text-text-secondary" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-text-secondary mb-1">
+              <div className="text-xs sm:text-sm font-medium text-text-secondary mb-0.5 sm:mb-1">
                 {item?.label}
               </div>
-              <div className={`text-sm font-medium ${item?.color} break-words`}>
+              <div className={`text-xs sm:text-sm font-medium ${item?.color} break-words`}>
                 {item?.value}
               </div>
             </div>
@@ -97,16 +97,16 @@ const JobInfoPanel = ({ job }) => {
         )) : null}
       </div>
       {/* Quick Stats */}
-      <div className="mt-6 pt-4 border-t border-border">
-        <div className="grid grid-cols-2 gap-4">
+      <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-border">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <div className="text-center">
-            <div className="text-lg font-bold text-secondary">
+            <div className="text-base sm:text-lg font-bold text-secondary">
               {job?.matchScore || 85}%
             </div>
             <div className="text-xs text-text-secondary">Match Score</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-text-primary">
+            <div className="text-base sm:text-lg font-bold text-text-primary">
               {job?.company?.openPositions || 12}
             </div>
             <div className="text-xs text-text-secondary">Open Positions</div>
@@ -115,10 +115,10 @@ const JobInfoPanel = ({ job }) => {
       </div>
       {/* Application Status */}
       {job?.applicationStatus && (
-        <div className="mt-4 p-3 bg-accent rounded-lg">
+        <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-accent rounded-lg">
           <div className="flex items-center gap-2">
-            <Icon name="CheckCircle" size={16} className="text-secondary" />
-            <span className="text-sm font-medium text-text-primary">
+            <Icon name="CheckCircle" size={14} className="sm:w-4 sm:h-4 text-secondary flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-text-primary break-words">
               Application Status: {job?.applicationStatus}
             </span>
           </div>
