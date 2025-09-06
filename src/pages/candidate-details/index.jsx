@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import Button from '../../components/ui/Button';
@@ -20,89 +21,63 @@ const CandidateDetails = () => {
   const fetchCandidateDetails = async () => {
     try {
       setIsLoading(true);
-      // Mock detailed candidate data
-      const mockCandidate = {
-        id: parseInt(id),
-        full_name: 'John Smith',
-        current_job_title: 'Senior Software Engineer',
-        location: 'San Francisco, CA',
-        phone: '+1 (555) 123-4567',
-        email: 'john.smith@email.com',
-        industry: 'Technology',
-        years_experience: '5-10',
-        remote_work_preference: 'Hybrid',
-        bio: 'Experienced full-stack developer with expertise in React, Node.js, and cloud technologies. Passionate about building scalable applications and leading development teams.',
-        skills: ['React', 'Node.js', 'JavaScript', 'Python', 'AWS', 'Docker', 'PostgreSQL', 'GraphQL'],
-        languages: [
-          { language: 'English', proficiency: 'Native' },
-          { language: 'Spanish', proficiency: 'Conversational' },
-          { language: 'French', proficiency: 'Basic' }
-        ],
-        availability: 'Available immediately',
-        notice_period: '2 weeks',
-        expected_salary_min: 120000,
-        expected_salary_max: 150000,
-        salary_currency: 'USD',
-        linkedin_url: 'https://linkedin.com/in/johnsmith',
-        github_url: 'https://github.com/johnsmith',
-        portfolio_url: 'https://johnsmith.dev',
-        resume_url: 'john_smith_resume.pdf',
-        education: [
-          {
-            institution: 'Stanford University',
-            degree: 'Master of Science',
-            field: 'Computer Science',
-            start_date: '2016',
-            end_date: '2018',
-            gpa: '3.8'
-          },
-          {
-            institution: 'UC Berkeley',
-            degree: 'Bachelor of Science',
-            field: 'Computer Engineering',
-            start_date: '2012',
-            end_date: '2016',
-            gpa: '3.6'
-          }
-        ],
-        work_experience: [
-          {
-            company: 'TechCorp Inc.',
-            position: 'Senior Software Engineer',
-            start_date: '2020',
-            end_date: 'Present',
-            description: 'Lead a team of 5 developers building scalable web applications. Implemented microservices architecture resulting in 40% performance improvement.',
-            technologies: ['React', 'Node.js', 'AWS', 'Docker']
-          },
-          {
-            company: 'StartupXYZ',
-            position: 'Full Stack Developer',
-            start_date: '2018',
-            end_date: '2020',
-            description: 'Built end-to-end web applications from concept to deployment. Worked directly with founders to define product requirements.',
-            technologies: ['Vue.js', 'Python', 'PostgreSQL', 'Redis']
-          }
-        ],
-        certifications: [
-          {
-            name: 'AWS Certified Solutions Architect',
-            issuer: 'Amazon Web Services',
-            date: '2021',
-            credential_id: 'AWS-12345'
-          },
-          {
-            name: 'Certified Kubernetes Administrator',
-            issuer: 'Cloud Native Computing Foundation',
-            date: '2020',
-            credential_id: 'CKA-67890'
-          }
-        ],
-        employment_type_preferences: ['full-time', 'contract'],
-        date_of_birth: '1990-05-15',
-        nationality: 'American'
+      
+      // Fetch candidate data from the database
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select(`
+          *,
+          work_experience:work_experience(
+            company,
+            position,
+            start_date,
+            end_date,
+            description,
+            technologies
+          ),
+          education:education(
+            institution,
+            degree,
+            field,
+            start_date,
+            end_date,
+            gpa
+          ),
+          certifications:certifications(
+            name,
+            issuer,
+            date,
+            credential_id
+          )
+        `)
+        .eq('id', id)
+        .eq('role', 'job_seeker')
+        .single();
+
+      if (error) throw error;
+      if (!data) throw new Error('Candidate not found');
+
+      // Format the data to match the expected structure
+      const formattedCandidate = {
+        ...data,
+        // Ensure arrays are always arrays, even if null/undefined
+        skills: Array.isArray(data.skills) ? data.skills : [],
+        languages: Array.isArray(data.languages) ? data.languages : [],
+        work_experience: Array.isArray(data.work_experience) ? data.work_experience : [],
+        education: Array.isArray(data.education) ? data.education : [],
+        certifications: Array.isArray(data.certifications) ? data.certifications : [],
+        employment_type_preferences: Array.isArray(data.employment_type_preferences) 
+          ? data.employment_type_preferences 
+          : ['full-time'],
+        // Handle portfolio files if they exist
+        ...(data.portfolio_files && {
+          linkedin_url: data.portfolio_files.linkedin_url,
+          github_url: data.portfolio_files.github_url,
+          portfolio_url: data.portfolio_files.portfolio_url
+        })
       };
       
-      setCandidate(mockCandidate);
+      setCandidate(formattedCandidate);
     } catch (error) {
       console.error('Error fetching candidate details:', error);
     } finally {
@@ -122,9 +97,28 @@ const CandidateDetails = () => {
     window.location.href = `mailto:${candidate.email}?subject=Opportunity at ${userProfile?.company_name || 'Our Company'}`;
   };
 
-  const downloadResume = () => {
-    // In a real app, this would download from Supabase storage
-    alert('Resume download functionality would be implemented with Supabase storage');
+  const downloadResume = async () => {
+    if (!candidate?.resume_url) {
+      alert('No resume available for this candidate');
+      return;
+    }
+
+    try {
+      // Get the signed URL for the resume
+      const { data, error } = await supabase.storage
+        .from('user-resumes')
+        .createSignedUrl(candidate.resume_url, 60); // URL expires in 60 seconds
+
+      if (error) throw error;
+      
+      // Open the resume in a new tab for download
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      console.error('Error downloading resume:', error);
+      alert('Failed to download resume. Please try again later.');
+    }
   };
 
   if (isLoading) {
