@@ -106,8 +106,17 @@ const CandidateDetails = () => {
         return;
       }
 
-      // Use the resume_url as stored in the database (should be the full path)
-      const resumePath = candidate.resume_url;
+      // Extract the file path from the resume_url (remove the base URL if present)
+      let resumePath = candidate.resume_url;
+      
+      // If the resume_url contains a full Supabase URL, extract just the file path
+      if (resumePath.includes('supabase.co/storage/v1/object/public/user-resumes/')) {
+        resumePath = resumePath.split('/user-resumes/')[1];
+      } else if (resumePath.includes('supabase.co/storage/v1/object/sign/user-resumes/')) {
+        resumePath = resumePath.split('/user-resumes/')[1];
+      }
+      
+      console.log('Using resume path:', resumePath);
       
       // Get the signed URL for the resume
       const { data, error } = await supabase.storage
