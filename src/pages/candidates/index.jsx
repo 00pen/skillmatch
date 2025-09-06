@@ -108,6 +108,9 @@ const CandidateBrowsing = () => {
         return;
       }
 
+      console.log('Raw jobSeekers data from database:', jobSeekers);
+      console.log('Number of jobSeekers found:', jobSeekers?.length);
+
       // If no candidates in database, use sample data
       if (!jobSeekers || jobSeekers.length === 0) {
         console.log('No candidates in database, using sample data');
@@ -133,6 +136,7 @@ const CandidateBrowsing = () => {
                        candidate.portfolio_files.find(file => file.type === 'portfolio')?.url : null)
       }));
 
+      console.log('Transformed candidates:', transformedCandidates);
       setCandidates(transformedCandidates);
     } catch (error) {
       console.error('Error fetching candidates:', error);
