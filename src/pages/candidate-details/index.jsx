@@ -85,14 +85,8 @@ const CandidateDetails = () => {
     console.log('Candidate:', candidate);
     console.log('Candidate resume_url:', candidate?.resume_url);
     
-    if (!candidate?.resume_url) {
-      alert('No resume available for this candidate');
-      return;
-    }
-
     try {
-      // The resume_url should be in format: {user_id}/{filename}
-      // First check if the file exists in the user's folder
+      // Always check storage first, even if resume_url is null
       const userId = candidate.id;
       console.log('User ID:', userId);
       
@@ -115,18 +109,34 @@ const CandidateDetails = () => {
         return;
       }
 
-      // Extract the file path from the resume_url (remove the base URL if present)
-      let resumePath = candidate.resume_url;
-      console.log('Original resume path:', resumePath);
+      let resumePath;
       
-      // If the resume_url contains a full Supabase URL, extract just the file path
-      if (resumePath.includes('supabase.co/storage/v1/object/public/user-resumes/')) {
-        resumePath = resumePath.split('/user-resumes/')[1];
-      } else if (resumePath.includes('supabase.co/storage/v1/object/sign/user-resumes/')) {
-        resumePath = resumePath.split('/user-resumes/')[1];
+      if (candidate?.resume_url) {
+        // Use the database URL if available
+        resumePath = candidate.resume_url;
+        console.log('Using database resume_url:', resumePath);
+        
+        // If the resume_url contains a full Supabase URL, extract just the file path
+        if (resumePath.includes('supabase.co/storage/v1/object/public/user-resumes/')) {
+          resumePath = resumePath.split('/user-resumes/')[1];
+        } else if (resumePath.includes('supabase.co/storage/v1/object/sign/user-resumes/')) {
+          resumePath = resumePath.split('/user-resumes/')[1];
+        }
+      } else {
+        // Database resume_url is null, but files exist in storage
+        // Use the first resume file found
+        const resumeFile = fileData.find(file => 
+          file.name.toLowerCase().includes('resume') || 
+          file.name.toLowerCase().endsWith('.pdf') ||
+          file.name.toLowerCase().endsWith('.doc') ||
+          file.name.toLowerCase().endsWith('.docx')
+        ) || fileData[0]; // Fallback to first file
+        
+        resumePath = `${userId}/${resumeFile.name}`;
+        console.log('Database resume_url is null, using storage file:', resumePath);
       }
       
-      console.log('Processed resume path:', resumePath);
+      console.log('Final resume path:', resumePath);
       
       // Get the signed URL for the resume
       const { data, error } = await supabase.storage
