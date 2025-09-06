@@ -62,6 +62,12 @@ const EmployerDashboard = () => {
             setCompanyProfile(companyData);
           }
         }
+
+        // Load recent activities
+        const { data: activitiesData, error: activitiesError } = await db.getRecentActivities(user.id);
+        if (!activitiesError && activitiesData) {
+          setActivities(activitiesData);
+        }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       } finally {
@@ -74,109 +80,45 @@ const EmployerDashboard = () => {
     }
   }, [user, userProfile]);
 
-  // Mock metrics data
+  // Dynamic metrics data based on real stats
   const metricsData = [
     {
       title: "Total Applications",
       value: stats?.totalApplications?.toString() || "0",
-      change: "+12%",
-      changeType: "increase",
+      change: stats?.applicationChange || "0%",
+      changeType: stats?.applicationChangeType || "neutral",
       icon: "FileText",
       color: "secondary"
     },
     {
       title: "Positions Filled",
-      value: "8",
-      change: "+3",
-      changeType: "increase",
+      value: stats?.positionsFilled?.toString() || "0",
+      change: stats?.positionsFilledChange || "0",
+      changeType: stats?.positionsFilledChangeType || "neutral",
       icon: "CheckCircle",
       color: "success"
     },
     {
       title: "Avg. Time to Hire",
-      value: "18 days",
-      change: "-2 days",
-      changeType: "decrease",
+      value: stats?.avgTimeToHire || "N/A",
+      change: stats?.timeToHireChange || "0 days",
+      changeType: stats?.timeToHireChangeType || "neutral",
       icon: "Clock",
       color: "warning"
     },
     {
       title: "Active Job Posts",
       value: stats?.activeJobs?.toString() || "0",
-      change: "+2",
-      changeType: "increase",
+      change: stats?.activeJobsChange || "0",
+      changeType: stats?.activeJobsChangeType || "neutral",
       icon: "Briefcase",
       color: "secondary"
     }
   ];
 
-  // Mock activity feed data
-  const mockActivities = [
-    {
-      id: 1,
-      type: "application",
-      candidateName: "Sarah Johnson",
-      action: "applied for",
-      jobTitle: "Senior Frontend Developer",
-      timestamp: new Date(Date.now() - 300000),
-      priority: "normal"
-    },
-    {
-      id: 2,
-      type: "status_change",
-      candidateName: "Michael Chen",
-      action: "moved to interview stage for",
-      jobTitle: "Product Marketing Manager",
-      timestamp: new Date(Date.now() - 900000),
-      priority: "high"
-    },
-    {
-      id: 3,
-      type: "hire",
-      candidateName: "Emily Rodriguez",
-      action: "was hired for",
-      jobTitle: "UX Designer",
-      timestamp: new Date(Date.now() - 1800000),
-      priority: "normal"
-    },
-    {
-      id: 4,
-      type: "interview",
-      candidateName: "David Kim",
-      action: "scheduled interview for",
-      jobTitle: "Data Scientist",
-      timestamp: new Date(Date.now() - 3600000),
-      priority: "high"
-    },
-    {
-      id: 5,
-      type: "message",
-      candidateName: "Lisa Wang",
-      action: "sent a message regarding",
-      jobTitle: "Senior Frontend Developer",
-      timestamp: new Date(Date.now() - 7200000),
-      priority: "normal"
-    }
-  ];
+  const [activities, setActivities] = useState([]);
 
-  // Mock company profile data
-  const mockCompanyProfile = {
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center",
-    description: "Leading technology company focused on innovative solutions",
-    industry: "Technology",
-    website: "https://company.com",
-    location: "San Francisco, CA",
-    benefits: ["Health Insurance", "401k", "Remote Work", "Flexible Hours"]
-  };
 
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   const filteredJobs = jobs?.filter(job => {
     if (selectedFilter === 'all') return true;
@@ -360,10 +302,10 @@ const EmployerDashboard = () => {
             />
             
             {/* Company Profile Widget */}
-            <CompanyProfileWidget profileData={companyProfile || mockCompanyProfile} />
+            {companyProfile && <CompanyProfileWidget profileData={companyProfile} />}
             
             {/* Activity Feed */}
-            <ActivityFeed activities={mockActivities} />
+            <ActivityFeed activities={activities} />
           </div>
         </div>
       </div>
