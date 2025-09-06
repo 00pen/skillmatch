@@ -113,69 +113,107 @@ export const AuthProvider = ({ children }) => {
         return { data: null, error };
       }
       
-      // If no profile exists, create a basic one
-      if (!profile) {
-        // Get current user data for profile creation
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        
-        // Handle OAuth users - extract info from user metadata and identities
-        const userMetadata = currentUser?.user_metadata || {};
-        const identities = currentUser?.identities || [];
-        const primaryIdentity = identities[0] || {};
-        
-        let fullName = userMetadata.full_name || userMetadata.name;
-        let avatarUrl = userMetadata.avatar_url || userMetadata.picture;
-        
-        // Handle different OAuth providers
-        if (primaryIdentity.provider === 'google') {
-          fullName = fullName || (userMetadata.given_name && userMetadata.family_name ? 
-            `${userMetadata.given_name} ${userMetadata.family_name}` : null);
-        } else if (primaryIdentity.provider === 'github') {
-          fullName = fullName || userMetadata.user_name;
-        } else if (primaryIdentity.provider === 'linkedin_oidc') {
-          fullName = fullName || (userMetadata.given_name && userMetadata.family_name ? 
-            `${userMetadata.given_name} ${userMetadata.family_name}` : null);
-        }
-        
-        const profileData = {
-          full_name: fullName || currentUser?.email?.split('@')[0] || 'User',
-          email: currentUser?.email,
-          role: userMetadata?.role?.replace('-', '_') || 'job_seeker',
-          profile_picture_url: avatarUrl,
-          oauth_provider: primaryIdentity.provider,
-          profile_completion: primaryIdentity.provider ? 25 : 0 // OAuth provides some basic info
-        };
-        
-        const { data: newProfile, error: createError } = await db.createUserProfile(userId, profileData);
+      // If profile exists, return it
+      if (profile) {
+        return { data: profile, error: null };
+      }
+      
+      // If no profile exists, try to create one
+      // Get current user data for profile creation
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      // Handle OAuth users - extract info from user metadata and identities
+      const userMetadata = currentUser?.user_metadata || {};
+      const identities = currentUser?.identities || [];
+      const primaryIdentity = identities[0] || {};
+      
+      let fullName = userMetadata.full_name || userMetadata.name;
+      let avatarUrl = userMetadata.avatar_url || userMetadata.picture;
+      
+      // Handle different OAuth providers with better name extraction
+      if (primaryIdentity.provider === 'google') {
+        const identityData = primaryIdentity.identity_data || {};
+        fullName = fullName || 
+                 userMetadata.name || 
+                 identityData.name ||
+                 identityData.full_name ||
+                 (userMetadata.given_name && userMetadata.family_name ? 
+                  `${userMetadata.given_name} ${userMetadata.family_name}` : null) ||
+                 (identityData.given_name && identityData.family_name ? 
+                  `${identityData.given_name} ${identityData.family_name}` : null) ||
+                 userMetadata.display_name ||
+                 identityData.display_name;
+                 
+        avatarUrl = avatarUrl || 
+                   userMetadata.picture || 
+                   identityData.picture ||
+                   userMetadata.avatar_url ||
+                   identityData.avatar_url;
+      } else if (primaryIdentity.provider === 'github') {
+        const identityData = primaryIdentity.identity_data || {};
+        fullName = fullName || userMetadata.name || identityData.name || userMetadata.user_name || identityData.login;
+      } else if (primaryIdentity.provider === 'linkedin_oidc') {
+        const identityData = primaryIdentity.identity_data || {};
+        fullName = fullName || 
+                 identityData.name ||
+                 (userMetadata.given_name && userMetadata.family_name ? 
+                  `${userMetadata.given_name} ${userMetadata.family_name}` : null) ||
+                 (identityData.given_name && identityData.family_name ? 
+                  `${identityData.given_name} ${identityData.family_name}` : null);
+      }
+      
+      const profileData = {
+        full_name: fullName || currentUser?.email?.split('@')[0] || 'User',
+        email: currentUser?.email,
+        role: userMetadata?.role?.replace('-', '_') || 'job_seeker',
+        profile_picture_url: avatarUrl,
+        profile_completion: primaryIdentity.provider ? 25 : 0 // OAuth provides some basic info
+      };
+      
+      // Try to create profile with oauth_provider, fallback without it if column doesn't exist
+      try {
+        const { data: newProfile, error: createError } = await db.createUserProfile(userId, {
+          ...profileData,
+          oauth_provider: primaryIdentity.provider
+        });
         
         if (createError) {
           if (createError.code === '23505') {
-            // Duplicate key error - profile was created by another process (trigger)
-            console.log('Profile was created by trigger, fetching existing profile');
+            // Duplicate key error - profile was created by another process
+            console.log('Profile was created by another process, fetching existing profile');
             const { data: existingProfile, error: fetchError } = await db.getUserProfile(userId);
             if (fetchError) {
               console.error('Error fetching existing profile:', fetchError);
               return { data: null, error: fetchError };
             }
-            setUserProfile(existingProfile);
             return { data: existingProfile, error: null };
+          } else if (createError.code === 'PGRST204' && createError.message.includes('oauth_provider')) {
+            // oauth_provider column doesn't exist, try without it
+            console.log('oauth_provider column not found, creating profile without it');
+            const { data: fallbackProfile, error: fallbackError } = await db.createUserProfile(userId, profileData);
+            if (fallbackError) {
+              if (fallbackError.code === '23505') {
+                // Still duplicate - fetch existing
+                const { data: existingProfile, error: fetchError } = await db.getUserProfile(userId);
+                return { data: existingProfile, error: fetchError };
+              }
+              console.error('Error creating user profile:', fallbackError);
+              return { data: null, error: fallbackError };
+            }
+            return { data: fallbackProfile, error: null };
           } else {
             console.error('Error creating user profile:', createError);
             return { data: null, error: createError };
           }
         }
         
-        setUserProfile(newProfile);
         return { data: newProfile, error: null };
+      } catch (error) {
+        console.error('Error creating user profile:', error);
+        return { data: null, error };
       }
-      
-      console.log('User profile loaded:', profile);
-      setUserProfile(profile);
-      return { data: profile, error: null };
     } catch (error) {
-      console.error('Error loading user profile:', error);
-      // Set profile to null if there's an error to prevent infinite loading
-      setUserProfile(null);
+      console.error('Error in loadUserProfile:', error);
       return { data: null, error };
     }
   };
