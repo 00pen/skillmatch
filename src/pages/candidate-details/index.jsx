@@ -25,31 +25,7 @@ const CandidateDetails = () => {
       // Fetch candidate data from the database
       const { data, error } = await supabase
         .from('user_profiles')
-        .select(`
-          *,
-          work_experience:work_experience(
-            company,
-            position,
-            start_date,
-            end_date,
-            description,
-            technologies
-          ),
-          education:education(
-            institution,
-            degree,
-            field,
-            start_date,
-            end_date,
-            gpa
-          ),
-          certifications:certifications(
-            name,
-            issuer,
-            date,
-            credential_id
-          )
-        `)
+        .select('*')
         .eq('id', id)
         .eq('role', 'job_seeker')
         .single();
@@ -244,30 +220,34 @@ const CandidateDetails = () => {
               <div className="bg-card border border-border rounded-lg shadow-card p-6">
                 <h3 className="text-xl font-semibold text-text-primary mb-4">Work Experience</h3>
                 <div className="space-y-6">
-                  {candidate.work_experience.map((job, index) => (
-                    <div key={index} className="border-l-2 border-primary pl-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-lg font-medium text-text-primary">
-                          {job.position}
-                        </h4>
-                        <span className="text-sm text-text-secondary">
-                          {job.start_date} - {job.end_date}
-                        </span>
-                      </div>
-                      <p className="text-text-secondary font-medium mb-2">{job.company}</p>
-                      <p className="text-text-secondary mb-3">{job.description}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {job.technologies.map((tech, techIndex) => (
-                          <span
-                            key={techIndex}
-                            className="inline-block px-2 py-1 text-xs bg-border text-text-secondary rounded"
-                          >
-                            {tech}
+                  {candidate.work_experience && candidate.work_experience.length > 0 ? (
+                    candidate.work_experience.map((job, index) => (
+                      <div key={index} className="border-l-2 border-primary pl-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="text-lg font-medium text-text-primary">
+                            {job.position}
+                          </h4>
+                          <span className="text-sm text-text-secondary">
+                            {job.start_date} - {job.end_date}
                           </span>
-                        ))}
+                        </div>
+                        <p className="text-text-secondary font-medium mb-2">{job.company}</p>
+                        <p className="text-text-secondary mb-3">{job.description}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {job.technologies && job.technologies.map((tech, techIndex) => (
+                            <span
+                              key={techIndex}
+                              className="inline-block px-2 py-1 text-xs bg-border text-text-secondary rounded"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-text-secondary">No work experience information available.</p>
+                  )}
                 </div>
               </div>
 
@@ -275,22 +255,26 @@ const CandidateDetails = () => {
               <div className="bg-card border border-border rounded-lg shadow-card p-6">
                 <h3 className="text-xl font-semibold text-text-primary mb-4">Education</h3>
                 <div className="space-y-4">
-                  {candidate.education.map((edu, index) => (
-                    <div key={index} className="border-l-2 border-success pl-4">
-                      <div className="flex justify-between items-start mb-1">
-                        <h4 className="text-lg font-medium text-text-primary">
-                          {edu.degree} in {edu.field}
-                        </h4>
-                        <span className="text-sm text-text-secondary">
-                          {edu.start_date} - {edu.end_date}
-                        </span>
+                  {candidate.education && candidate.education.length > 0 ? (
+                    candidate.education.map((edu, index) => (
+                      <div key={index} className="border-l-2 border-success pl-4">
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className="text-lg font-medium text-text-primary">
+                            {edu.degree} in {edu.field}
+                          </h4>
+                          <span className="text-sm text-text-secondary">
+                            {edu.start_date} - {edu.end_date}
+                          </span>
+                        </div>
+                        <p className="text-text-secondary">{edu.institution}</p>
+                        {edu.gpa && (
+                          <p className="text-sm text-text-secondary">GPA: {edu.gpa}</p>
+                        )}
                       </div>
-                      <p className="text-text-secondary">{edu.institution}</p>
-                      {edu.gpa && (
-                        <p className="text-sm text-text-secondary">GPA: {edu.gpa}</p>
-                      )}
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-text-secondary">No education information available.</p>
+                  )}
                 </div>
               </div>
 
@@ -298,20 +282,24 @@ const CandidateDetails = () => {
               <div className="bg-card border border-border rounded-lg shadow-card p-6">
                 <h3 className="text-xl font-semibold text-text-primary mb-4">Certifications</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {candidate.certifications.map((cert, index) => (
-                    <div key={index} className="p-4 border border-border rounded-lg">
-                      <h4 className="font-medium text-text-primary mb-1">{cert.name}</h4>
-                      <p className="text-sm text-text-secondary mb-1">{cert.issuer}</p>
-                      <p className="text-sm text-text-secondary">
-                        Issued: {cert.date}
-                      </p>
-                      {cert.credential_id && (
-                        <p className="text-xs text-text-secondary mt-1">
-                          ID: {cert.credential_id}
+                  {candidate.certifications && candidate.certifications.length > 0 ? (
+                    candidate.certifications.map((cert, index) => (
+                      <div key={index} className="p-4 border border-border rounded-lg">
+                        <h4 className="font-medium text-text-primary mb-1">{cert.name}</h4>
+                        <p className="text-sm text-text-secondary mb-1">{cert.issuer}</p>
+                        <p className="text-sm text-text-secondary">
+                          Issued: {cert.date}
                         </p>
-                      )}
-                    </div>
-                  ))}
+                        {cert.credential_id && (
+                          <p className="text-xs text-text-secondary mt-1">
+                            ID: {cert.credential_id}
+                          </p>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-text-secondary">No certifications available.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -385,12 +373,16 @@ const CandidateDetails = () => {
               <div className="bg-card border border-border rounded-lg shadow-card p-6">
                 <h3 className="text-lg font-semibold text-text-primary mb-4">Languages</h3>
                 <div className="space-y-2">
-                  {candidate.languages.map((lang, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span className="text-text-primary">{lang.language}</span>
-                      <span className="text-text-secondary text-sm">{lang.proficiency}</span>
-                    </div>
-                  ))}
+                  {candidate.languages && candidate.languages.length > 0 ? (
+                    candidate.languages.map((lang, index) => (
+                      <div key={index} className="flex justify-between">
+                        <span className="text-text-primary">{lang.language}</span>
+                        <span className="text-text-secondary text-sm">{lang.proficiency}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-text-secondary">No language information available.</p>
+                  )}
                 </div>
               </div>
 
