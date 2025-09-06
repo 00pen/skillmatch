@@ -10,6 +10,7 @@ const AuthContext = createContext({
   signUp: async () => {},
   signIn: async () => {},
   signOut: async () => {},
+  signInWithOAuth: async () => {},
   updateProfile: async () => {}
 });
 
@@ -115,17 +116,53 @@ export const AuthProvider = ({ children }) => {
       // If no profile exists, create a basic one
       if (!profile) {
         // Get current user data for profile creation
-        const { data: { user: currentUser } } = await auth.getUser();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
         
-        const { data: newProfile, error: createError } = await db.createUserProfile(userId, {
-          full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'User',
+        // Handle OAuth users - extract info from user metadata and identities
+        const userMetadata = currentUser?.user_metadata || {};
+        const identities = currentUser?.identities || [];
+        const primaryIdentity = identities[0] || {};
+        
+        let fullName = userMetadata.full_name || userMetadata.name;
+        let avatarUrl = userMetadata.avatar_url || userMetadata.picture;
+        
+        // Handle different OAuth providers
+        if (primaryIdentity.provider === 'google') {
+          fullName = fullName || (userMetadata.given_name && userMetadata.family_name ? 
+            `${userMetadata.given_name} ${userMetadata.family_name}` : null);
+        } else if (primaryIdentity.provider === 'github') {
+          fullName = fullName || userMetadata.user_name;
+        } else if (primaryIdentity.provider === 'linkedin_oidc') {
+          fullName = fullName || (userMetadata.given_name && userMetadata.family_name ? 
+            `${userMetadata.given_name} ${userMetadata.family_name}` : null);
+        }
+        
+        const profileData = {
+          full_name: fullName || currentUser?.email?.split('@')[0] || 'User',
           email: currentUser?.email,
-          role: currentUser?.user_metadata?.role?.replace('-', '_') || 'job_seeker'
-        });
+          role: userMetadata?.role?.replace('-', '_') || 'job_seeker',
+          profile_picture_url: avatarUrl,
+          oauth_provider: primaryIdentity.provider,
+          profile_completion: primaryIdentity.provider ? 25 : 0 // OAuth provides some basic info
+        };
+        
+        const { data: newProfile, error: createError } = await db.createUserProfile(userId, profileData);
         
         if (createError) {
-          console.error('Error creating user profile:', createError);
-          return { data: null, error: createError };
+          if (createError.code === '23505') {
+            // Duplicate key error - profile was created by another process (trigger)
+            console.log('Profile was created by trigger, fetching existing profile');
+            const { data: existingProfile, error: fetchError } = await db.getUserProfile(userId);
+            if (fetchError) {
+              console.error('Error fetching existing profile:', fetchError);
+              return { data: null, error: fetchError };
+            }
+            setUserProfile(existingProfile);
+            return { data: existingProfile, error: null };
+          } else {
+            console.error('Error creating user profile:', createError);
+            return { data: null, error: createError };
+          }
         }
         
         setUserProfile(newProfile);
@@ -203,11 +240,28 @@ export const AuthProvider = ({ children }) => {
           // Wait a moment for trigger to potentially create profile
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Check if profile was created by trigger
-          const { data: existingProfile, error: getError } = await db.getUserProfile(data.user.id);
+          // Check if profile was created by trigger with retry logic
+          let existingProfile = null;
+          let attempts = 0;
+          const maxAttempts = 3;
           
-          if (getError && getError.code !== 'PGRST116') {
-            console.error('Error getting existing profile:', getError);
+          while (attempts < maxAttempts && !existingProfile) {
+            const { data: profile, error: getError } = await db.getUserProfile(data.user.id);
+            
+            if (getError && getError.code !== 'PGRST116') {
+              console.error('Error getting existing profile:', getError);
+              break;
+            }
+            
+            if (profile) {
+              existingProfile = profile;
+              break;
+            }
+            
+            attempts++;
+            if (attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
           }
           
           let profileResult;
@@ -222,29 +276,36 @@ export const AuthProvider = ({ children }) => {
               console.log('User profile updated successfully:', profileResult);
             }
           } else {
-            // Create new profile manually (trigger didn't work)
-            console.log('No profile found, creating manually');
-            const { data: createResult, error: createError } = await db.createUserProfile(data.user.id, {
+            // Try to update first (in case profile exists but wasn't retrieved)
+            console.log('Attempting to update profile first (in case it exists)');
+            const { data: updateResult, error: updateError } = await db.updateUserProfile(data.user.id, {
               ...profileData,
               email: data.user.email
             });
-            if (createError) {
-              console.error('Error creating user profile:', createError);
-              // Try one more time with minimal data
-              const { data: retryResult, error: retryError } = await db.createUserProfile(data.user.id, {
-                full_name: userData.fullName || data.user.email?.split('@')[0] || 'User',
-                email: data.user.email,
-                role: userData.role?.replace('-', '_') || 'job_seeker'
+            
+            if (updateError) {
+              console.log('Update failed, profile likely doesn\'t exist. Error:', updateError);
+              // Profile doesn't exist, create it
+              console.log('Creating new profile manually');
+              const { data: createResult, error: createError } = await db.createUserProfile(data.user.id, {
+                ...profileData,
+                email: data.user.email
               });
-              if (retryError) {
-                console.error('Retry profile creation failed:', retryError);
+              
+              if (createError && createError.code === '23505') {
+                // Duplicate key error - profile was created by another process
+                console.log('Profile was created by another process, fetching it');
+                const { data: fetchedProfile } = await db.getUserProfile(data.user.id);
+                profileResult = fetchedProfile;
+              } else if (createError) {
+                console.error('Error creating user profile:', createError);
               } else {
-                profileResult = retryResult;
-                console.log('User profile created on retry:', profileResult);
+                profileResult = createResult;
+                console.log('User profile created successfully:', profileResult);
               }
             } else {
-              profileResult = createResult;
-              console.log('User profile created successfully:', profileResult);
+              profileResult = updateResult;
+              console.log('User profile updated successfully:', profileResult);
             }
           }
         } catch (profileError) {
@@ -278,6 +339,32 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await auth.signIn(email, password);
       return { data, error };
     } catch (error) {
+      return { data: null, error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithOAuth = async (provider, options = {}) => {
+    try {
+      setIsLoading(true);
+      
+      // Get the current URL for redirect
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo,
+          queryParams: options.role ? { role: options.role } : {}
+        }
+      });
+      
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error(`OAuth ${provider} sign in error:`, error);
       return { data: null, error };
     } finally {
       setIsLoading(false);
@@ -358,6 +445,7 @@ export const AuthProvider = ({ children }) => {
     signUp,
     signIn,
     signOut,
+    signInWithOAuth,
     updateProfile,
     deleteAccount
   };

@@ -12,7 +12,7 @@ import Icon from '../../components/AppIcon';
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn } = useAuth();
+  const { signIn, signInWithOAuth } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -20,6 +20,7 @@ const Login = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState({});
 
   const from = location.state?.from || '/';
 
@@ -104,6 +105,27 @@ const Login = () => {
     }
   };
 
+  const handleOAuthLogin = async (provider) => {
+    setOauthLoading(prev => ({ ...prev, [provider]: true }));
+    
+    try {
+      const { data, error } = await signInWithOAuth(provider);
+      
+      if (error) {
+        setErrors({ submit: getErrorMessage(error) });
+        return;
+      }
+      
+      // OAuth will redirect to callback page, so no need to navigate here
+      
+    } catch (error) {
+      console.error(`${provider} login error:`, error);
+      setErrors({ submit: getErrorMessage(error) });
+    } finally {
+      setOauthLoading(prev => ({ ...prev, [provider]: false }));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <RoleAdaptiveNavbar />
@@ -181,47 +203,45 @@ const Login = () => {
                   variant="outline"
                   size="default"
                   fullWidth
-                  onClick={() => {
-                    if (import.meta.env.DEV) {
-                      console.log('Google login not implemented');
-                    }
-                  }}
+                  loading={oauthLoading.google}
+                  disabled={Object.values(oauthLoading).some(loading => loading)}
+                  onClick={() => handleOAuthLogin('google')}
                   className="bg-white border-border text-text-primary hover:bg-muted transition-colors duration-150"
                   iconName="Chrome"
                   iconPosition="left"
                   iconSize={18}
                 >
-                  Continue with Google
+                  {oauthLoading.google ? 'Connecting...' : 'Continue with Google'}
                 </Button>
                 
                 <Button
                   variant="outline"
                   size="default"
                   fullWidth
-                  onClick={() => {
-                    if (import.meta.env.DEV) {
-                      console.log('LinkedIn login not implemented');
-                    }
-                  }}
+                  loading={oauthLoading.linkedin_oidc}
+                  disabled={Object.values(oauthLoading).some(loading => loading)}
+                  onClick={() => handleOAuthLogin('linkedin_oidc')}
                   className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-150"
                   iconName="Linkedin"
                   iconPosition="left"
                   iconSize={18}
                 >
-                  Continue with LinkedIn
+                  {oauthLoading.linkedin_oidc ? 'Connecting...' : 'Continue with LinkedIn'}
                 </Button>
                 
                 <Button
                   variant="outline"
                   size="default"
                   fullWidth
-                  onClick={() => console.log('GitHub login')}
+                  loading={oauthLoading.github}
+                  disabled={Object.values(oauthLoading).some(loading => loading)}
+                  onClick={() => handleOAuthLogin('github')}
                   className="bg-gray-900 text-white hover:bg-gray-800 border-gray-900 transition-colors duration-150"
                   iconName="Github"
                   iconPosition="left"
                   iconSize={18}
                 >
-                  Continue with GitHub
+                  {oauthLoading.github ? 'Connecting...' : 'Continue with GitHub'}
                 </Button>
               </div>
             </div>

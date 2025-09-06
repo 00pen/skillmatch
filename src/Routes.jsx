@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -20,6 +21,7 @@ import CandidateBrowsing from './pages/candidates/index';
 import CandidateDetails from './pages/candidate-details/index';
 import CompanyDetails from './pages/company-details/index';
 import SavedJobs from './pages/saved-jobs';
+import AuthCallback from './pages/auth/callback';
 
 const Routes = () => {
   return (
@@ -42,6 +44,11 @@ const Routes = () => {
             <Route path="/login" element={
               <PageTransition>
                 <Login />
+              </PageTransition>
+            } />
+            <Route path="/auth/callback" element={
+              <PageTransition>
+                <AuthCallback />
               </PageTransition>
             } />
             
@@ -139,6 +146,7 @@ const Routes = () => {
           </RouterRoutes>
         </ErrorBoundary>
       </AuthProvider>
+      <SpeedInsights />
     </BrowserRouter>
   );
 };

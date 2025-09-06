@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
+import { getErrorMessage } from '../../../utils/errorHandler';
 import Button from '../../../components/ui/Button';
 
-
 const SocialRegistration = ({ selectedRole, className = '' }) => {
+  const { signInWithOAuth } = useAuth();
   const [isLoading, setIsLoading] = useState({});
+  const [error, setError] = useState('');
 
   const socialProviders = [
     {
@@ -13,7 +16,7 @@ const SocialRegistration = ({ selectedRole, className = '' }) => {
       color: 'bg-white border-border text-text-primary hover:bg-muted'
     },
     {
-      id: 'linkedin',
+      id: 'linkedin_oidc',
       name: 'LinkedIn',
       icon: 'Linkedin',
       color: 'bg-blue-600 text-white hover:bg-blue-700'
@@ -27,21 +30,27 @@ const SocialRegistration = ({ selectedRole, className = '' }) => {
   ];
 
   const handleSocialLogin = async (providerId) => {
+    if (!selectedRole) {
+      setError('Please select your role first');
+      return;
+    }
+
     setIsLoading(prev => ({ ...prev, [providerId]: true }));
+    setError('');
     
     try {
-      // Simulate social login API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { data, error: oauthError } = await signInWithOAuth(providerId, { role: selectedRole });
       
-      // Mock successful social registration
-      console.log(`Registering with ${providerId} as ${selectedRole}`);
+      if (oauthError) {
+        setError(getErrorMessage(oauthError));
+        return;
+      }
       
-      // In a real app, this would redirect to the OAuth provider
-      // For demo purposes, we'll just show a success message
-      alert(`Social registration with ${providerId} would be implemented here`);
+      // OAuth will redirect to callback page, so no need to navigate here
       
     } catch (error) {
       console.error(`${providerId} registration failed:`, error);
+      setError(getErrorMessage(error));
     } finally {
       setIsLoading(prev => ({ ...prev, [providerId]: false }));
     }
@@ -57,6 +66,13 @@ const SocialRegistration = ({ selectedRole, className = '' }) => {
           <span className="px-4 bg-background text-text-secondary">Or continue with</span>
         </div>
       </div>
+      
+      {error && (
+        <div className="p-3 bg-error/10 border border-error/20 rounded-lg">
+          <p className="text-sm text-error">{error}</p>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 gap-3">
         {socialProviders?.map((provider) => (
           <Button

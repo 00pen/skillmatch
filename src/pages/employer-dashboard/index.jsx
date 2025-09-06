@@ -38,10 +38,15 @@ const EmployerDashboard = () => {
     const loadDashboardData = async () => {
       setIsLoading(true);
       try {
-        // Load company jobs
-        const { data: jobsData, error: jobsError } = await db.getCompanyJobs(userProfile?.company_id);
-        if (!jobsError && jobsData) {
-          setJobs(jobsData);
+        // Load company jobs - only if user has a company_id
+        if (userProfile?.company_id) {
+          const { data: jobsData, error: jobsError } = await db.getCompanyJobs(userProfile.company_id);
+          if (!jobsError && jobsData) {
+            setJobs(jobsData);
+          }
+        } else {
+          // If no company_id, set empty jobs array
+          setJobs([]);
         }
         
         // Load job statistics
