@@ -87,22 +87,32 @@ const CandidateDetails = () => {
     }
 
     try {
-      // First check if the file exists in storage
+      // The resume_url should be in format: {user_id}/{filename}
+      // First check if the file exists in the user's folder
+      const userId = candidate.id;
       const { data: fileData, error: fileError } = await supabase.storage
         .from('user-resumes')
-        .list('', {
-          search: candidate.resume_url.split('/').pop() // Get filename from path
-        });
+        .list(userId); // List files in the user's folder
 
-      if (fileError || !fileData || fileData.length === 0) {
-        alert('Resume file not found in storage. This candidate may not have uploaded a resume yet.');
+      if (fileError) {
+        console.error('Error listing files:', fileError);
+        alert('Unable to access resume files. Please try again later.');
         return;
       }
 
+      // Check if any resume files exist for this user
+      if (!fileData || fileData.length === 0) {
+        alert('No resume files found for this candidate.');
+        return;
+      }
+
+      // Use the resume_url as stored in the database (should be the full path)
+      const resumePath = candidate.resume_url;
+      
       // Get the signed URL for the resume
       const { data, error } = await supabase.storage
         .from('user-resumes')
-        .createSignedUrl(candidate.resume_url, 60); // URL expires in 60 seconds
+        .createSignedUrl(resumePath, 60); // URL expires in 60 seconds
 
       if (error) throw error;
       
