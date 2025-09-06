@@ -87,6 +87,18 @@ const CandidateDetails = () => {
     }
 
     try {
+      // First check if the file exists in storage
+      const { data: fileData, error: fileError } = await supabase.storage
+        .from('user-resumes')
+        .list('', {
+          search: candidate.resume_url.split('/').pop() // Get filename from path
+        });
+
+      if (fileError || !fileData || fileData.length === 0) {
+        alert('Resume file not found in storage. This candidate may not have uploaded a resume yet.');
+        return;
+      }
+
       // Get the signed URL for the resume
       const { data, error } = await supabase.storage
         .from('user-resumes')
@@ -100,7 +112,11 @@ const CandidateDetails = () => {
       }
     } catch (error) {
       console.error('Error downloading resume:', error);
-      alert('Failed to download resume. Please try again later.');
+      if (error.message?.includes('Object not found')) {
+        alert('Resume file not found. This candidate may not have uploaded a resume yet.');
+      } else {
+        alert('Failed to download resume. Please try again later.');
+      }
     }
   };
 
@@ -332,8 +348,9 @@ const CandidateDetails = () => {
                     iconName="Download"
                     iconPosition="left"
                     className="w-full"
+                    disabled={!candidate?.resume_url}
                   >
-                    Download Resume
+                    {candidate?.resume_url ? 'Download Resume' : 'No Resume Available'}
                   </Button>
                   <Button
                     variant="outline"
