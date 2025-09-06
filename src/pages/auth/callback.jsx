@@ -47,9 +47,11 @@ const AuthCallback = () => {
         const identities = session.user.identities || [];
         const primaryIdentity = identities[0] || {};
         
+        console.log('Full session user object:', session.user);
         console.log('OAuth user metadata:', userMetadata);
         console.log('OAuth identities:', identities);
         console.log('Primary identity:', primaryIdentity);
+        console.log('Identity data:', primaryIdentity.identity_data);
         
         // Determine user info based on OAuth provider
         let fullName = userMetadata.full_name || userMetadata.name;
@@ -57,23 +59,42 @@ const AuthCallback = () => {
         
         // Handle different OAuth providers with better name extraction
         if (primaryIdentity.provider === 'google') {
-          // Google provides name in multiple formats
+          // Check identity_data for Google-specific fields
+          const identityData = primaryIdentity.identity_data || {};
+          console.log('Google identity data:', identityData);
+          
+          // Google provides name in multiple formats - check all possible sources
           fullName = fullName || 
                    userMetadata.name || 
+                   identityData.name ||
+                   identityData.full_name ||
                    (userMetadata.given_name && userMetadata.family_name ? 
                     `${userMetadata.given_name} ${userMetadata.family_name}` : null) ||
-                   userMetadata.display_name;
-          avatarUrl = avatarUrl || userMetadata.picture || userMetadata.avatar_url;
+                   (identityData.given_name && identityData.family_name ? 
+                    `${identityData.given_name} ${identityData.family_name}` : null) ||
+                   userMetadata.display_name ||
+                   identityData.display_name;
+                   
+          avatarUrl = avatarUrl || 
+                     userMetadata.picture || 
+                     identityData.picture ||
+                     userMetadata.avatar_url ||
+                     identityData.avatar_url;
         } else if (primaryIdentity.provider === 'github') {
-          fullName = fullName || userMetadata.name || userMetadata.user_name;
+          const identityData = primaryIdentity.identity_data || {};
+          fullName = fullName || userMetadata.name || identityData.name || userMetadata.user_name || identityData.login;
         } else if (primaryIdentity.provider === 'linkedin_oidc') {
+          const identityData = primaryIdentity.identity_data || {};
           fullName = fullName || 
+                   identityData.name ||
                    (userMetadata.given_name && userMetadata.family_name ? 
-                    `${userMetadata.given_name} ${userMetadata.family_name}` : null);
+                    `${userMetadata.given_name} ${userMetadata.family_name}` : null) ||
+                   (identityData.given_name && identityData.family_name ? 
+                    `${identityData.given_name} ${identityData.family_name}` : null);
         }
         
-        console.log('Extracted name:', fullName);
-        console.log('Extracted avatar:', avatarUrl);
+        console.log('Final extracted name:', fullName);
+        console.log('Final extracted avatar:', avatarUrl);
 
         // Create or update user profile
         if (!existingProfile) {
