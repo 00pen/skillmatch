@@ -81,6 +81,10 @@ const CandidateDetails = () => {
   };
 
   const downloadResume = async () => {
+    console.log('=== Resume Download Debug ===');
+    console.log('Candidate:', candidate);
+    console.log('Candidate resume_url:', candidate?.resume_url);
+    
     if (!candidate?.resume_url) {
       alert('No resume available for this candidate');
       return;
@@ -90,9 +94,13 @@ const CandidateDetails = () => {
       // The resume_url should be in format: {user_id}/{filename}
       // First check if the file exists in the user's folder
       const userId = candidate.id;
+      console.log('User ID:', userId);
+      
       const { data: fileData, error: fileError } = await supabase.storage
         .from('user-resumes')
         .list(userId); // List files in the user's folder
+
+      console.log('Storage list result:', { fileData, fileError });
 
       if (fileError) {
         console.error('Error listing files:', fileError);
@@ -102,12 +110,14 @@ const CandidateDetails = () => {
 
       // Check if any resume files exist for this user
       if (!fileData || fileData.length === 0) {
+        console.log('No files found in user folder');
         alert('No resume files found for this candidate.');
         return;
       }
 
       // Extract the file path from the resume_url (remove the base URL if present)
       let resumePath = candidate.resume_url;
+      console.log('Original resume path:', resumePath);
       
       // If the resume_url contains a full Supabase URL, extract just the file path
       if (resumePath.includes('supabase.co/storage/v1/object/public/user-resumes/')) {
@@ -116,17 +126,20 @@ const CandidateDetails = () => {
         resumePath = resumePath.split('/user-resumes/')[1];
       }
       
-      console.log('Using resume path:', resumePath);
+      console.log('Processed resume path:', resumePath);
       
       // Get the signed URL for the resume
       const { data, error } = await supabase.storage
         .from('user-resumes')
         .createSignedUrl(resumePath, 60); // URL expires in 60 seconds
 
+      console.log('Signed URL result:', { data, error });
+
       if (error) throw error;
       
       // Open the resume in a new tab for download
       if (data?.signedUrl) {
+        console.log('Opening signed URL:', data.signedUrl);
         window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
       }
     } catch (error) {
