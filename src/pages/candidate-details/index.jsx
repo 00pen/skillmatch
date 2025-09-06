@@ -15,51 +15,54 @@ const CandidateDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchCandidateDetails();
-  }, [id]);
+    const fetchCandidateDetails = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch candidate data from the database
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', id)
+          .eq('role', 'job_seeker')
+          .single();
 
-  const fetchCandidateDetails = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Fetch candidate data from the database
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', id)
-        .eq('role', 'job_seeker')
-        .single();
+        if (error) throw error;
+        if (!data) throw new Error('Candidate not found');
 
-      if (error) throw error;
-      if (!data) throw new Error('Candidate not found');
+        // Format the data to match the expected structure
+        const formattedCandidate = {
+          ...data,
+          // Ensure arrays are always arrays, even if null/undefined
+          skills: Array.isArray(data.skills) ? data.skills : [],
+          languages: Array.isArray(data.languages) ? data.languages : [],
+          work_experience: Array.isArray(data.work_experience) ? data.work_experience : [],
+          education: Array.isArray(data.education) ? data.education : [],
+          certifications: Array.isArray(data.certifications) ? data.certifications : [],
+          employment_type_preferences: Array.isArray(data.employment_type_preferences) 
+            ? data.employment_type_preferences 
+            : ['full-time'],
+          // Handle portfolio files if they exist
+          ...(data.portfolio_files && {
+            linkedin_url: data.portfolio_files.linkedin_url,
+            github_url: data.portfolio_files.github_url,
+            portfolio_url: data.portfolio_files.portfolio_url
+          })
+        };
+        
+        setCandidate(formattedCandidate);
+      } catch (error) {
+        console.error('Error fetching candidate details:', error);
+        setCandidate(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      // Format the data to match the expected structure
-      const formattedCandidate = {
-        ...data,
-        // Ensure arrays are always arrays, even if null/undefined
-        skills: Array.isArray(data.skills) ? data.skills : [],
-        languages: Array.isArray(data.languages) ? data.languages : [],
-        work_experience: Array.isArray(data.work_experience) ? data.work_experience : [],
-        education: Array.isArray(data.education) ? data.education : [],
-        certifications: Array.isArray(data.certifications) ? data.certifications : [],
-        employment_type_preferences: Array.isArray(data.employment_type_preferences) 
-          ? data.employment_type_preferences 
-          : ['full-time'],
-        // Handle portfolio files if they exist
-        ...(data.portfolio_files && {
-          linkedin_url: data.portfolio_files.linkedin_url,
-          github_url: data.portfolio_files.github_url,
-          portfolio_url: data.portfolio_files.portfolio_url
-        })
-      };
-      
-      setCandidate(formattedCandidate);
-    } catch (error) {
-      console.error('Error fetching candidate details:', error);
-    } finally {
-      setIsLoading(false);
+    if (id) {
+      fetchCandidateDetails();
     }
-  };
+  }, [id]);
 
   const formatSalaryRange = (min, max, currency) => {
     if (!min && !max) return 'Salary not specified';
@@ -70,6 +73,10 @@ const CandidateDetails = () => {
   };
 
   const handleContact = () => {
+    if (!candidate?.email) {
+      alert('No email available for this candidate');
+      return;
+    }
     window.location.href = `mailto:${candidate.email}?subject=Opportunity at ${userProfile?.company_name || 'Our Company'}`;
   };
 
@@ -172,7 +179,7 @@ const CandidateDetails = () => {
                     </div>
                     <div className="flex items-center text-text-secondary">
                       <Icon name="Clock" size={16} className="mr-2" />
-                      {candidate.years_experience} years experience
+                      {candidate.years_experience || 'Experience not specified'}
                     </div>
                   </div>
                   <div className="flex space-x-2">
@@ -201,7 +208,7 @@ const CandidateDetails = () => {
                 </div>
 
                 <p className="text-text-secondary mb-6">
-                  {candidate.bio}
+                  {candidate.bio || 'No bio available for this candidate.'}
                 </p>
 
                 <div className="flex flex-wrap gap-2">
