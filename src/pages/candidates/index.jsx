@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { sampleCandidates } from '../../utils/sampleData';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import Input from '../../components/ui/Input';
@@ -98,7 +99,16 @@ const CandidateBrowsing = () => {
 
       if (error) {
         console.error('Error fetching candidates:', error);
-        setCandidates([]);
+        // Fallback to sample data if database fetch fails
+        console.log('Using sample candidates as fallback');
+        setCandidates(sampleCandidates);
+        return;
+      }
+
+      // If no candidates in database, use sample data
+      if (!jobSeekers || jobSeekers.length === 0) {
+        console.log('No candidates in database, using sample data');
+        setCandidates(sampleCandidates);
         return;
       }
 
@@ -117,6 +127,9 @@ const CandidateBrowsing = () => {
       setCandidates(transformedCandidates);
     } catch (error) {
       console.error('Error fetching candidates:', error);
+      // Fallback to sample data on any error
+      console.log('Using sample candidates as fallback due to error');
+      setCandidates(sampleCandidates);
     } finally {
       setIsLoading(false);
     }
