@@ -380,9 +380,8 @@ const CandidateDetails = () => {
                     iconName="Download"
                     iconPosition="left"
                     className="w-full"
-                    disabled={!candidate?.resume_url}
                   >
-                    {candidate?.resume_url ? 'Download Resume' : 'No Resume Available'}
+                    Download Resume
                   </Button>
                   <Button
                     variant="outline"
