@@ -79,6 +79,9 @@ const CandidateBrowsing = () => {
           bio,
           skills,
           years_experience,
+          experience_level,
+          current_job_title,
+          industry,
           expected_salary_min,
           expected_salary_max,
           remote_work_preference,
@@ -115,13 +118,19 @@ const CandidateBrowsing = () => {
       // Transform database data to match expected format
       const transformedCandidates = jobSeekers.map(candidate => ({
         ...candidate,
-        current_job_title: candidate.work_experience?.[0]?.job_title || 'Job Seeker',
-        industry: candidate.work_experience?.[0]?.industry || 'technology',
+        current_job_title: candidate.current_job_title || candidate.work_experience?.[0]?.job_title || 'Job Seeker',
+        industry: candidate.industry || candidate.work_experience?.[0]?.industry || 'technology',
         skills: Array.isArray(candidate.skills) ? candidate.skills : 
                (candidate.skills ? JSON.parse(candidate.skills) : []),
-        linkedin_url: candidate.portfolio_files?.find(file => file.type === 'linkedin')?.url,
-        github_url: candidate.portfolio_files?.find(file => file.type === 'github')?.url,
-        portfolio_url: candidate.portfolio_files?.find(file => file.type === 'portfolio')?.url
+        linkedin_url: candidate.portfolio_files?.linkedin || 
+                     (Array.isArray(candidate.portfolio_files) ? 
+                      candidate.portfolio_files.find(file => file.type === 'linkedin')?.url : null),
+        github_url: candidate.portfolio_files?.github || 
+                   (Array.isArray(candidate.portfolio_files) ? 
+                    candidate.portfolio_files.find(file => file.type === 'github')?.url : null),
+        portfolio_url: candidate.portfolio_files?.portfolio || 
+                      (Array.isArray(candidate.portfolio_files) ? 
+                       candidate.portfolio_files.find(file => file.type === 'portfolio')?.url : null)
       }));
 
       setCandidates(transformedCandidates);
@@ -156,9 +165,17 @@ const CandidateBrowsing = () => {
     }
 
     if (filters.experience_level) {
-      filtered = filtered.filter(candidate =>
-        candidate.years_experience === filters.experience_level
-      );
+      filtered = filtered.filter(candidate => {
+        const years = candidate.years_experience;
+        switch (filters.experience_level) {
+          case '0-1': return years <= 1;
+          case '1-3': return years >= 1 && years <= 3;
+          case '3-5': return years >= 3 && years <= 5;
+          case '5-10': return years >= 5 && years <= 10;
+          case '10+': return years >= 10;
+          default: return true;
+        }
+      });
     }
 
     if (filters.industry) {
