@@ -98,33 +98,72 @@ const AuthCallback = () => {
 
         // Create or update user profile
         if (!existingProfile) {
+          // Profile doesn't exist, create new one
           const profileData = {
             full_name: fullName || session.user.email?.split('@')[0] || 'User',
             email: session.user.email,
             role: roleParam?.replace('-', '_') || 'job_seeker',
             profile_picture_url: avatarUrl,
-            oauth_provider: primaryIdentity.provider,
-            profile_completion: 25 // Basic info from OAuth
+            profile_completion: 20
           };
 
-          const { data: newProfile, error: createError } = await db.createUserProfile(session.user.id, profileData);
-          
-          if (createError) {
-            console.error('Profile creation error:', createError);
-            // Continue anyway - profile might be created by trigger
+          // Only add oauth_provider if the column exists (to handle migration timing)
+          try {
+            const { error: createError } = await db.createUserProfile(session.user.id, {
+              ...profileData,
+              oauth_provider: primaryIdentity.provider
+            });
+            
+            if (createError) {
+              // If oauth_provider column doesn't exist, try without it
+              if (createError.code === 'PGRST204' && createError.message.includes('oauth_provider')) {
+                console.log('oauth_provider column not found, creating profile without it');
+                const { error: fallbackError } = await db.createUserProfile(session.user.id, profileData);
+                if (fallbackError) {
+                  console.error('Profile creation error:', fallbackError);
+                }
+              } else {
+                console.error('Profile creation error:', createError);
+              }
+            }
+          } catch (error) {
+            console.error('Profile creation error:', error);
           }
         } else {
-          // Update existing profile with OAuth info if not already set
+          // Profile exists, update missing fields
           const updates = {};
+          
+          if (!existingProfile.full_name && fullName) {
+            updates.full_name = fullName;
+          }
           if (!existingProfile.profile_picture_url && avatarUrl) {
             updates.profile_picture_url = avatarUrl;
           }
-          if (!existingProfile.oauth_provider) {
-            updates.oauth_provider = primaryIdentity.provider;
+          
+          // Only try to update oauth_provider if we have it and it's missing
+          if (primaryIdentity.provider && !existingProfile.oauth_provider) {
+            try {
+              updates.oauth_provider = primaryIdentity.provider;
+            } catch (error) {
+              // Column might not exist yet, ignore this field
+              console.log('oauth_provider column not available, skipping update');
+            }
           }
           
           if (Object.keys(updates).length > 0) {
-            await db.updateUserProfile(session.user.id, updates);
+            try {
+              await db.updateUserProfile(session.user.id, updates);
+            } catch (error) {
+              // If oauth_provider update fails, try without it
+              if (error.code === 'PGRST204' && error.message.includes('oauth_provider')) {
+                delete updates.oauth_provider;
+                if (Object.keys(updates).length > 0) {
+                  await db.updateUserProfile(session.user.id, updates);
+                }
+              } else {
+                throw error;
+              }
+            }
           }
         }
 
