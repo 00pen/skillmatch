@@ -115,6 +115,8 @@ export const AuthProvider = ({ children }) => {
       
       // If profile exists, return it
       if (profile) {
+        console.log('User profile loaded:', profile);
+        setUserProfile(profile);
         return { data: profile, error: null };
       }
       
@@ -186,6 +188,7 @@ export const AuthProvider = ({ children }) => {
               console.error('Error fetching existing profile:', fetchError);
               return { data: null, error: fetchError };
             }
+            setUserProfile(existingProfile);
             return { data: existingProfile, error: null };
           } else if (createError.code === 'PGRST204' && createError.message.includes('oauth_provider')) {
             // oauth_provider column doesn't exist, try without it
@@ -195,11 +198,13 @@ export const AuthProvider = ({ children }) => {
               if (fallbackError.code === '23505') {
                 // Still duplicate - fetch existing
                 const { data: existingProfile, error: fetchError } = await db.getUserProfile(userId);
+                if (existingProfile) setUserProfile(existingProfile);
                 return { data: existingProfile, error: fetchError };
               }
               console.error('Error creating user profile:', fallbackError);
               return { data: null, error: fallbackError };
             }
+            setUserProfile(fallbackProfile);
             return { data: fallbackProfile, error: null };
           } else {
             console.error('Error creating user profile:', createError);
@@ -207,6 +212,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
         
+        setUserProfile(newProfile);
         return { data: newProfile, error: null };
       } catch (error) {
         console.error('Error creating user profile:', error);
@@ -214,6 +220,8 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
+      // Set profile to null if there's an error to prevent infinite loading
+      setUserProfile(null);
       return { data: null, error };
     }
   };
