@@ -15,24 +15,26 @@ const DeleteAccountModal = ({ isOpen, onClose, onConfirm, isLoading = false }) =
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="bg-card border border-destructive rounded-lg shadow-modal w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-destructive rounded-full flex items-center justify-center">
-              <Icon name="AlertTriangle" size={20} className="text-destructive-foreground" />
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50">
+      <div className="flex items-center justify-center min-h-full p-4">
+        <div className="bg-card border border-destructive rounded-lg shadow-modal w-full max-w-md">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-border">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-destructive rounded-full flex items-center justify-center">
+                <Icon name="AlertTriangle" size={20} className="text-destructive-foreground" />
+              </div>
+              <h2 className="text-xl font-semibold text-destructive">Delete Account</h2>
             </div>
-            <h2 className="text-xl font-semibold text-destructive">Delete Account</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              iconName="X"
+              iconSize={20}
+              className="text-text-secondary hover:text-text-primary"
+            />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            iconName="X"
-            iconSize={20}
-            className="text-text-secondary hover:text-text-primary"
-          />
         </div>
 
         {/* Content */}

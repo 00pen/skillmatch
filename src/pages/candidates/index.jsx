@@ -66,80 +66,55 @@ const CandidateBrowsing = () => {
   const fetchCandidates = async () => {
     try {
       setIsLoading(true);
-      // For now, we'll use mock data since we don't have user profiles endpoint
-      // In a real app, this would fetch from Supabase
-      const mockCandidates = [
-        {
-          id: 1,
-          full_name: 'John Smith',
-          current_job_title: 'Senior Software Engineer',
-          location: 'San Francisco, CA',
-          industry: 'technology',
-          years_experience: '5-10',
-          remote_work_preference: 'hybrid',
-          bio: 'Experienced full-stack developer with expertise in React, Node.js, and cloud technologies.',
-          skills: ['React', 'Node.js', 'JavaScript', 'Python', 'AWS'],
-          availability: 'Available immediately',
-          expected_salary_min: 120000,
-          expected_salary_max: 150000,
-          linkedin_url: 'https://linkedin.com/in/johnsmith',
-          github_url: 'https://github.com/johnsmith',
-          resume_url: 'john_smith_resume.pdf'
-        },
-        {
-          id: 2,
-          full_name: 'Sarah Johnson',
-          current_job_title: 'Product Marketing Manager',
-          location: 'New York, NY',
-          industry: 'technology',
-          years_experience: '3-5',
-          remote_work_preference: 'remote',
-          bio: 'Strategic marketing professional with a track record of launching successful products.',
-          skills: ['Product Marketing', 'Analytics', 'A/B Testing', 'Salesforce', 'HubSpot'],
-          availability: '2 weeks notice',
-          expected_salary_min: 90000,
-          expected_salary_max: 110000,
-          linkedin_url: 'https://linkedin.com/in/sarahjohnson',
-          portfolio_url: 'https://sarahjohnson.com',
-          resume_url: 'sarah_johnson_resume.pdf'
-        },
-        {
-          id: 3,
-          full_name: 'Michael Chen',
-          current_job_title: 'UX/UI Designer',
-          location: 'Austin, TX',
-          industry: 'technology',
-          years_experience: '3-5',
-          remote_work_preference: 'flexible',
-          bio: 'Creative designer passionate about creating intuitive user experiences.',
-          skills: ['Figma', 'Sketch', 'Adobe XD', 'Prototyping', 'User Research'],
-          availability: '1 month notice',
-          expected_salary_min: 75000,
-          expected_salary_max: 95000,
-          linkedin_url: 'https://linkedin.com/in/michaelchen',
-          portfolio_url: 'https://michaelchen.design',
-          resume_url: 'michael_chen_resume.pdf'
-        },
-        {
-          id: 4,
-          full_name: 'Emily Rodriguez',
-          current_job_title: 'Data Scientist',
-          location: 'Seattle, WA',
-          industry: 'healthcare',
-          years_experience: '1-3',
-          remote_work_preference: 'remote',
-          bio: 'Data scientist with expertise in machine learning and healthcare analytics.',
-          skills: ['Python', 'R', 'Machine Learning', 'SQL', 'Tableau'],
-          availability: 'Available immediately',
-          expected_salary_min: 85000,
-          expected_salary_max: 105000,
-          linkedin_url: 'https://linkedin.com/in/emilyrodriguez',
-          github_url: 'https://github.com/emilyrodriguez',
-          resume_url: 'emily_rodriguez_resume.pdf'
-        }
-      ];
       
-      setCandidates(mockCandidates);
+      // Fetch real job seeker profiles from the database
+      const { data: jobSeekers, error } = await db.supabase
+        .from('user_profiles')
+        .select(`
+          id,
+          full_name,
+          email,
+          location,
+          bio,
+          skills,
+          years_experience,
+          expected_salary_min,
+          expected_salary_max,
+          remote_work_preference,
+          availability,
+          profile_picture_url,
+          resume_url,
+          portfolio_files,
+          languages,
+          certifications,
+          education,
+          work_experience,
+          created_at,
+          updated_at
+        `)
+        .eq('role', 'job_seeker')
+        .not('full_name', 'is', null)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching candidates:', error);
+        setCandidates([]);
+        return;
+      }
+
+      // Transform database data to match expected format
+      const transformedCandidates = jobSeekers.map(candidate => ({
+        ...candidate,
+        current_job_title: candidate.work_experience?.[0]?.job_title || 'Job Seeker',
+        industry: candidate.work_experience?.[0]?.industry || 'technology',
+        skills: Array.isArray(candidate.skills) ? candidate.skills : 
+               (candidate.skills ? JSON.parse(candidate.skills) : []),
+        linkedin_url: candidate.portfolio_files?.find(file => file.type === 'linkedin')?.url,
+        github_url: candidate.portfolio_files?.find(file => file.type === 'github')?.url,
+        portfolio_url: candidate.portfolio_files?.find(file => file.type === 'portfolio')?.url
+      }));
+
+      setCandidates(transformedCandidates);
     } catch (error) {
       console.error('Error fetching candidates:', error);
     } finally {
@@ -153,16 +128,17 @@ const CandidateBrowsing = () => {
     if (filters.keywords) {
       const keywords = filters.keywords.toLowerCase();
       filtered = filtered.filter(candidate =>
-        candidate.full_name.toLowerCase().includes(keywords) ||
-        candidate.current_job_title.toLowerCase().includes(keywords) ||
-        candidate.bio.toLowerCase().includes(keywords) ||
-        candidate.skills.some(skill => skill.toLowerCase().includes(keywords))
+        candidate.full_name?.toLowerCase().includes(keywords) ||
+        candidate.current_job_title?.toLowerCase().includes(keywords) ||
+        candidate.bio?.toLowerCase().includes(keywords) ||
+        (candidate.skills && Array.isArray(candidate.skills) && 
+         candidate.skills.some(skill => skill.toLowerCase().includes(keywords)))
       );
     }
 
     if (filters.location) {
       filtered = filtered.filter(candidate =>
-        candidate.location.toLowerCase().includes(filters.location.toLowerCase())
+        candidate.location?.toLowerCase().includes(filters.location.toLowerCase())
       );
     }
 

@@ -41,6 +41,7 @@ const AuthCallback = () => {
 
         // Get role from URL params (passed during OAuth initiation)
         const roleParam = searchParams.get('role');
+        console.log('Role parameter from URL:', roleParam);
         
         // Extract user info from OAuth provider
         const userMetadata = session.user.user_metadata || {};

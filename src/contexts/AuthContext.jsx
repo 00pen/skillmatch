@@ -401,8 +401,7 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo,
-          queryParams: options.role ? { role: options.role } : {}
+          redirectTo: options.role ? `${redirectTo}?role=${options.role}` : redirectTo
         }
       });
       

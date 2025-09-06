@@ -158,10 +158,11 @@ const QuickApplyModal = ({ isOpen, onClose, job }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm animate-fade-in"
       onClick={handleOverlayClick}
     >
-      <div className="bg-card border border-border rounded-lg shadow-modal w-full max-w-2xl my-8 flex flex-col animate-scale-in">
+      <div className="flex items-center justify-center min-h-full p-4">
+        <div className="bg-card border border-border rounded-lg shadow-modal w-full max-w-2xl flex flex-col animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
@@ -332,6 +333,7 @@ const QuickApplyModal = ({ isOpen, onClose, job }) => {
               </div>
             </form>
           )}
+        </div>
         </div>
       </div>
     </div>
