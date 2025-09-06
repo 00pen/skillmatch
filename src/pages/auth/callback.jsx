@@ -133,7 +133,7 @@ const AuthCallback = () => {
             console.error('Profile creation error:', error);
           }
         } else {
-          // Profile exists, update missing fields
+          // Profile exists, update missing fields and role if specified
           const updates = {};
           
           if (!existingProfile.full_name && fullName) {
@@ -141,6 +141,12 @@ const AuthCallback = () => {
           }
           if (!existingProfile.profile_picture_url && avatarUrl) {
             updates.profile_picture_url = avatarUrl;
+          }
+          
+          // Update role if specified in OAuth callback and different from existing
+          if (roleParam && roleParam.replace('-', '_') !== existingProfile.role) {
+            updates.role = roleParam.replace('-', '_');
+            console.log(`Updating role from ${existingProfile.role} to ${updates.role}`);
           }
           
           // Only try to update oauth_provider if we have it and it's missing
