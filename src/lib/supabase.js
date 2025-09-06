@@ -811,5 +811,48 @@ export const db = {
       .delete()
       .eq('id', activityId);
     return { error };
+  },
+
+  getRecentActivities: async (userId, limit = 10) => {
+    try {
+      // Get recent applications and their status changes for this employer
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          id,
+          status,
+          created_at,
+          updated_at,
+          full_name,
+          jobs (
+            id,
+            title
+          )
+        `)
+        .eq('jobs.created_by', userId)
+        .order('updated_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching recent activities:', error);
+        return { data: [], error };
+      }
+
+      // Transform the data into activity format
+      const activities = data?.map(app => ({
+        id: app.id,
+        type: 'application',
+        candidateName: app.full_name,
+        action: 'applied for',
+        jobTitle: app.jobs?.title || 'Unknown Position',
+        timestamp: new Date(app.updated_at || app.created_at),
+        priority: 'normal'
+      })) || [];
+
+      return { data: activities, error: null };
+    } catch (err) {
+      console.error('Error in getRecentActivities:', err);
+      return { data: [], error: err };
+    }
   }
 };
