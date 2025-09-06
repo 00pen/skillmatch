@@ -17,6 +17,7 @@ const NavigationBreadcrumbs = ({ className = '', customBreadcrumbs = null }) => 
     '/application-tracking': { label: 'Applications', icon: 'Clipboard' },
     '/profile': { label: 'Profile', icon: 'User' },
     '/candidates': { label: 'Candidates', icon: 'Users' },
+    '/candidate': { label: 'Candidate', icon: 'User' },
     '/settings': { label: 'Settings', icon: 'Settings' }
   };
 
@@ -52,15 +53,34 @@ const NavigationBreadcrumbs = ({ className = '', customBreadcrumbs = null }) => 
           isLast: index === pathSegments?.length - 1
         });
       } else {
-        // Handle dynamic routes or unknown paths
-        const formattedLabel = segment?.split('-')?.map(word => word?.charAt(0)?.toUpperCase() + word?.slice(1))?.join(' ');
-        
-        breadcrumbs?.push({
-          label: formattedLabel,
-          path: currentPath,
-          icon: 'ChevronRight',
-          isLast: index === pathSegments?.length - 1
-        });
+        // Handle dynamic routes - special case for candidate details
+        if (currentPath.startsWith('/candidate/')) {
+          // For candidate detail pages, link back to candidates list
+          breadcrumbs?.push({
+            label: 'Candidates',
+            path: '/candidates',
+            icon: 'Users',
+            isLast: false
+          });
+          // Add the candidate name/ID as the last breadcrumb
+          breadcrumbs?.push({
+            label: 'Candidate Details',
+            path: currentPath,
+            icon: 'User',
+            isLast: true
+          });
+          return; // Skip further processing for this route
+        } else {
+          // Handle other dynamic routes or unknown paths
+          const formattedLabel = segment?.split('-')?.map(word => word?.charAt(0)?.toUpperCase() + word?.slice(1))?.join(' ');
+          
+          breadcrumbs?.push({
+            label: formattedLabel,
+            path: currentPath,
+            icon: 'ChevronRight',
+            isLast: index === pathSegments?.length - 1
+          });
+        }
       }
     });
 

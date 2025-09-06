@@ -45,7 +45,10 @@ const CandidateBrowsing = () => {
   };
 
   const handleViewCandidate = (candidateId) => {
-    navigate(`/candidate/${candidateId}`);
+    // Ensure the UUID is properly formatted (remove any spaces)
+    const cleanId = candidateId.replace(/\s+/g, '');
+    console.log('Navigating to candidate:', { original: candidateId, cleaned: cleanId });
+    navigate(`/candidate/${cleanId}`);
   };
 
   const filteredCandidates = candidates.filter(candidate => {

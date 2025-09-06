@@ -15,17 +15,25 @@ const CandidateDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('=== Candidate Details Debug ===');
+    console.log('Route ID parameter:', id);
+    console.log('Current user:', user);
+    console.log('User profile:', userProfile);
+    
     const fetchCandidateDetails = async () => {
       try {
         setIsLoading(true);
         
         // Fetch candidate data from the database
+        console.log('Fetching candidate with ID:', id);
         const { data, error } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('id', id)
           .eq('role', 'job_seeker')
           .single();
+
+        console.log('Database query result:', { data, error });
 
         if (error) throw error;
         if (!data) throw new Error('Candidate not found');
