@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { db } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import Input from '../../components/ui/Input';
@@ -68,7 +68,7 @@ const CandidateBrowsing = () => {
       setIsLoading(true);
       
       // Fetch real job seeker profiles from the database
-      const { data: jobSeekers, error } = await db.supabase
+      const { data: jobSeekers, error } = await supabase
         .from('user_profiles')
         .select(`
           id,
