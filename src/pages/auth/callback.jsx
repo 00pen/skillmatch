@@ -47,18 +47,33 @@ const AuthCallback = () => {
         const identities = session.user.identities || [];
         const primaryIdentity = identities[0] || {};
         
+        console.log('OAuth user metadata:', userMetadata);
+        console.log('OAuth identities:', identities);
+        console.log('Primary identity:', primaryIdentity);
+        
         // Determine user info based on OAuth provider
         let fullName = userMetadata.full_name || userMetadata.name;
         let avatarUrl = userMetadata.avatar_url || userMetadata.picture;
         
-        // Handle different OAuth providers
+        // Handle different OAuth providers with better name extraction
         if (primaryIdentity.provider === 'google') {
-          fullName = fullName || userMetadata.given_name + ' ' + userMetadata.family_name;
+          // Google provides name in multiple formats
+          fullName = fullName || 
+                   userMetadata.name || 
+                   (userMetadata.given_name && userMetadata.family_name ? 
+                    `${userMetadata.given_name} ${userMetadata.family_name}` : null) ||
+                   userMetadata.display_name;
+          avatarUrl = avatarUrl || userMetadata.picture || userMetadata.avatar_url;
         } else if (primaryIdentity.provider === 'github') {
-          fullName = fullName || userMetadata.user_name;
+          fullName = fullName || userMetadata.name || userMetadata.user_name;
         } else if (primaryIdentity.provider === 'linkedin_oidc') {
-          fullName = fullName || userMetadata.given_name + ' ' + userMetadata.family_name;
+          fullName = fullName || 
+                   (userMetadata.given_name && userMetadata.family_name ? 
+                    `${userMetadata.given_name} ${userMetadata.family_name}` : null);
         }
+        
+        console.log('Extracted name:', fullName);
+        console.log('Extracted avatar:', avatarUrl);
 
         // Create or update user profile
         if (!existingProfile) {
